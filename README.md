@@ -11,7 +11,7 @@ Projekt zaliczeniowy z przedmiotu Metody i algorytmy planowania ruchu
 - wizualizacja planowania ścieżki w Rviz, sprawdzenie czasu planowania, długości i kształtu ścieżek"
 
 
-
+## Linki idk man
 
 - [Algorytm RRT jug](https://put-jug.github.io/lab-miapr/Lab%206%20-%20Algorytmy%20poszukiwania%20%C5%9Bcie%C5%BCki%20pr%C3%B3bkuj%C4%85ce%20przestrze%C5%84%20poszukiwa%C5%84%20na%20przyk%C5%82adzie%20RRT%20(Rapidly-exploring%20Random%20Tree).html)
 
