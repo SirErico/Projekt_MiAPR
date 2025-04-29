@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./ros2_ws/src/mapr_rrt",
+    ]
+}
