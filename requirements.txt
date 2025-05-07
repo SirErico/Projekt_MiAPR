@@ -13,6 +13,7 @@ libclang==18.1.1
 Markdown==3.8
 markdown-it-py==3.0.0
 MarkupSafe==3.0.2
+matplotlib==3.10.1
 mdurl==0.1.2
 ml_dtypes==0.5.1
 namex==0.0.9
@@ -24,6 +25,7 @@ protobuf==5.29.4
 Pygments==2.19.1
 requests==2.32.3
 rich==14.0.0
+scikit-learn==1.6.1
 six==1.17.0
 tensorboard==2.19.0
 tensorboard-data-server==0.7.2
