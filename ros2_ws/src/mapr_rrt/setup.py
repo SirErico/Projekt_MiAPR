@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'rrt = mapr_rrt.rrt:main',
             'rrt_vertices = mapr_rrt.rrt_vertices:main',
+            'rrt_ai = mapr_rrt.rrt_ai:main',
             'points = mapr_rrt.points:main',
         ],
     },
