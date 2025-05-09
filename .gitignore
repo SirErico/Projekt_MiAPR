@@ -8,3 +8,5 @@ install
 log
 
 *.keras
+*.h5
+*.hdf5

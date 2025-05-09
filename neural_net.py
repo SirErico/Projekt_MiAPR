@@ -90,7 +90,7 @@ plt.show()
 
 
 # Save the trained model
-save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model.keras"
+save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model.h5"
 if not os.path.exists(os.path.dirname(save_path)):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 model.save(save_path)

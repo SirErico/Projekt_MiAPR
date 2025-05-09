@@ -23,7 +23,7 @@ class RRT(GridMap):
         
         # Load the trained model
         model_path = self.declare_parameter("model_path", "").get_parameter_value().string_value
-        if not model_path or os.path.exists(model_path):
+        if not model_path or not os.path.exists(model_path):
             print(f"Model file not found at {model_path}. Please check the path.")
             sys.exit(1)
         self.model = tf.keras.models.load_model(model_path)
