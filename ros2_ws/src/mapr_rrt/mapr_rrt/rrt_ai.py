@@ -1,8 +1,14 @@
 import rclpy
+import os
 import time
 from mapr_rrt.grid_map import GridMap
 import numpy as np
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all logs, 1 = filter INFO, 2 = filter WARNING
 import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.models import load_model
+import sys
+import matplotlib.pyplot as plt
 
 
 np.random.seed(44)
@@ -11,8 +17,16 @@ np.random.seed(44)
 class RRT(GridMap):
     def __init__(self):
         super(RRT, self).__init__()
+        
+        # Check python path
+        print("Python executable:", sys.executable)
+        
         # Load the trained model
-        self.model = tf.keras.models.load_model("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/occupancy_model.h5")
+        model_path = self.declare_parameter("model_path", "").get_parameter_value().string_value
+        if not model_path or os.path.exists(model_path):
+            print(f"Model file not found at {model_path}. Please check the path.")
+            sys.exit(1)
+        self.model = tf.keras.models.load_model(model_path)
         print("Model loaded successfully!")
 
     def query_gradient(self, x, y):
@@ -149,7 +163,8 @@ class RRT(GridMap):
         """
         self.get_logger().info("============== RRT Search =============")
         self.get_logger().info("TEST MODEL READ")
-        point = self.query_gradient(self.random_point())
+        x, y = self.random_point()
+        point = self.query_gradient(x, y)
         self.get_logger().info(f"Point: {point}")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         while True:
