@@ -2,10 +2,7 @@ import rclpy
 import time
 from mapr_rrt.grid_map import GridMap
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
-
-
 
 
 np.random.seed(44)
@@ -14,6 +11,25 @@ np.random.seed(44)
 class RRT(GridMap):
     def __init__(self):
         super(RRT, self).__init__()
+        # Load the trained model
+        self.model = tf.keras.models.load_model("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/occupancy_model.h5")
+        print("Model loaded successfully!")
+
+    def query_gradient(self, x, y):
+        """
+        Query the trained model for the gradient (occupancy probability) at a given point.
+        :param x: x-coordinate (normalized)
+        :param y: y-coordinate (normalized)
+        :return: Occupancy probability (gradient)
+        """
+        # Normalize the input coordinates
+        normalized_input = np.array([[x / self.map.shape[1], y / self.map.shape[0]]])
+        
+        # Predict the occupancy probability
+        prediction = self.model.predict(normalized_input)
+        
+        # Return the gradient (occupancy probability)
+        return prediction[0][0]
 
     def check_if_valid(self, a, b):
         """
@@ -23,8 +39,8 @@ class RRT(GridMap):
         :return: boolean
         """
         num_samples = 100
-        a = np.array([a[0],a[1]])  # Convert tuple to numpy array
-        b = np.array([b[0],b[1]])  # Convert tuple to numpy array
+        a = np.array([a[0], a[1]])  # Convert tuple to numpy array
+        b = np.array([b[0], b[1]])  # Convert tuple to numpy array
         height, width = self.map.shape
         for t in np.linspace(b, a, num_samples, endpoint=False):
             # Sample point on the line segment
@@ -32,7 +48,7 @@ class RRT(GridMap):
             # Check if the sample point is within bounds
             if not (0 <= t[0] < width and 0 <= t[1] < height):
                 return False
-            # check if no collision
+            # Check if no collision
             if self.map[int(t[1]), int(t[0])] == 100:
                 return False
         return True
@@ -104,7 +120,6 @@ class RRT(GridMap):
     def new_pt(self, pt, closest):
         """
         Finds last point in the free space on the segment connecting closest with pt
-
         :param pt: point in 2D
         :param closest: vertex in the tree (point in 2D)
         :return: point in 2D
@@ -122,9 +137,8 @@ class RRT(GridMap):
             if np.linalg.norm(next_point - closest_1) > np.linalg.norm(pt_1 - closest_1):
                 return (pt_1[0], pt_1[1])  # Return the original point if it is closer
             if not self.check_if_valid(tuple(current_point), tuple(next_point)):
-                return (current_point[0], current_point[1]) # Stop if the next point is not valid
+                return (current_point[0], current_point[1])  # Stop if the next point is not valid
             current_point = next_point
-
 
     def search(self):
         """
@@ -133,34 +147,10 @@ class RRT(GridMap):
         (key is the child vertex, and value is its parent vertex).
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
-        
-        # Input is self.map
-        # Create a neural network model where the inputs are points in the map
-        # and the output is a boolean indicating if the point is free or not
-        # Define the model
-        model = tf.keras.Sequential([
-            tf.keras.layers.Dense(64, activation='relu', input_shape=(2,)),
-            tf.keras.layers.Dense(64, activation='relu'),
-            tf.keras.layers.Dense(1, activation='sigmoid')
-        ])
-        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-        # Generate training data
-        map_input = []
-        map_output = []
-        for i in range(self.map.shape[0]):
-            for j in range(self.map.shape[1]):
-                map_input.append([j, i])
-                if self.map[i, j] == 0:
-                    map_output.append(1)  # If the point is free == 1
-                else:
-                    map_output.append(0)
-        map_input = np.array(map_input)
-        map_output = np.array(map_output)
-        # Train the model
-        model.fit(map_input, map_output, epochs=10, batch_size=32)
-        print("Model trained!")
-        
-        
+        self.get_logger().info("============== RRT Search =============")
+        self.get_logger().info("TEST MODEL READ")
+        point = self.query_gradient(self.random_point())
+        self.get_logger().info(f"Point: {point}")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         while True:
             # Draw random point

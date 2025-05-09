@@ -6,3 +6,5 @@ bruh.txt
 build
 install
 log
+
+*.keras
