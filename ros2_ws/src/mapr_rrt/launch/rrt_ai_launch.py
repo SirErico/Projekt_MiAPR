@@ -22,7 +22,7 @@ def generate_launch_description():
     
     model_path = LaunchConfiguration('model_path')
     # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_small.yaml')
-    map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_medium.yaml')
+    map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map.yaml')
     # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map.yaml')
 
     map_server_cmd = IncludeLaunchDescription(

@@ -8,13 +8,13 @@ import os
 
 # Load the gridmap data
 os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-map_file = "map_medium.pgm"
-map_file_test = "map.pgm"
+map_file = "map.pgm"
+
 
 
 with open(map_file, 'rb') as pgmf:
      grid_map = plt.imread(pgmf)
-print("Grid map shape:", grid_map.shape) # (20, 30)
+print("Grid map shape:", grid_map.shape) # (30, 30) - map
 rows, cols = grid_map.shape
 
 # with Image.open(map_file_test) as img:
@@ -41,8 +41,9 @@ train_output = map_output
 
 # Define the neural network architecture
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(128, activation='relu', input_shape=(2,)),
-    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(512, activation='relu', input_shape=(2,)),
+    tf.keras.layers.Dense(256, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu'),
     tf.keras.layers.Dense(64, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
@@ -61,7 +62,7 @@ early_stopping = tf.keras.callbacks.EarlyStopping(
 
 
 # Train the model
-model.fit(train_input, train_output, epochs=5000, batch_size=32, verbose=2, callbacks=[early_stopping])
+model.fit(train_input, train_output, epochs=5000, batch_size=8, verbose=2, callbacks=[early_stopping])
 # verbose=2 for more detailed output, 1 for less detailed output, 0 for no output
 
 # Evaluate the model
