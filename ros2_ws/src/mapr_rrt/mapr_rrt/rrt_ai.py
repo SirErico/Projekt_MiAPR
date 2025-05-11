@@ -6,7 +6,6 @@ import numpy as np
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all logs, 1 = filter INFO, 2 = filter WARNING
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.models import load_model
 import sys
 import matplotlib.pyplot as plt
 
