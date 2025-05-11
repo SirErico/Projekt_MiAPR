@@ -32,23 +32,40 @@ map_input = np.array(map_input)
 map_output = np.array(map_output)
 
 # Split the data into training and testing sets
-train_input, test_input, train_output, test_output = train_test_split(map_input, map_output, test_size=0.1, random_state=42)
+# train_input, test_input, train_output, test_output = train_test_split(map_input, map_output, test_size=0.1, random_state=42)
+# Not splitting the data for now
+train_input = map_input
+train_output = map_output
+
+
 
 # Define the neural network architecture
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(64, activation='relu', input_shape=(2,)),
-    tf.keras.layers.Dense(32, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu', input_shape=(2,)),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
+
 
 # Compile the model
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
+# Early stopping callback
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='accuracy',
+    patience=200,
+    min_delta=0.0,
+    restore_best_weights=True
+)
+
+
 # Train the model
-model.fit(train_input, train_output, epochs=10, batch_size=32, validation_data=(test_input, test_output))
+model.fit(train_input, train_output, epochs=5000, batch_size=32, verbose=2, callbacks=[early_stopping])
+# verbose=2 for more detailed output, 1 for less detailed output, 0 for no output
 
 # Evaluate the model
-loss, accuracy = model.evaluate(test_input, test_output)
+loss, accuracy = model.evaluate(train_input, train_output)
 print("Loss:", loss)
 print("Accuracy:", accuracy)
 
@@ -79,10 +96,10 @@ plt.show()
 
 
 # Calculate the confusion matrix
-preds = model.predict(test_input)
+preds = model.predict(train_input)
 predicted = tf.squeeze(preds)
 predicted = np.array([1 if x >= 0.5 else 0 for x in predicted])
-actual = np.array(test_output)
+actual = np.array(train_output)
 conf_mat = confusion_matrix(actual, predicted)
 displ = ConfusionMatrixDisplay(confusion_matrix=conf_mat)
 displ.plot()
@@ -90,7 +107,7 @@ plt.show()
 
 
 # Save the trained model
-save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model.h5"
+save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model.keras"
 if not os.path.exists(os.path.dirname(save_path)):
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 model.save(save_path)
