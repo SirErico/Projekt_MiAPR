@@ -10,3 +10,5 @@ log
 *.keras
 *.h5
 *.hdf5
+
+ptxas
