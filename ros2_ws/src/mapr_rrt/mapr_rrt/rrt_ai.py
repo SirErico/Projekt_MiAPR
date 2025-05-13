@@ -9,16 +9,14 @@ from tensorflow import keras
 import sys
 import matplotlib.pyplot as plt
 
-
 np.random.seed(44)
-
 
 class RRT(GridMap):
     def __init__(self):
         super(RRT, self).__init__()
         
-        # Check python path
-        print("Python executable:", sys.executable)
+        # # Check python path
+        # print("Python executable:", sys.executable)
         
         # Load the trained model
         model_path = self.declare_parameter("model_path", "").get_parameter_value().string_value
@@ -36,13 +34,31 @@ class RRT(GridMap):
         :return: Occupancy probability (gradient)
         """
         # Normalize the input coordinates
-        normalized_input = np.array([[x / self.map.shape[1], y / self.map.shape[0]]])
+        normalized_input = np.array([[x / self.width, y / self.height]])
         
         # Predict the occupancy probability
         prediction = self.model.predict(normalized_input)
         
         # Return the gradient (occupancy probability)
         return prediction[0][0]
+
+
+    def gradient_at(self, x, y):
+        """
+        Compute gradient of model output with respect to input (x, y), both in map pixel space.
+        :return: gradient vector as np.array([dx, dy])
+        """
+        input_tensor = tf.convert_to_tensor([[x / self.width, y / self.height]], dtype=tf.float32)
+        with tf.GradientTape() as tape:
+            tape.watch(input_tensor)
+            prediction = self.model(input_tensor)
+        grad = tape.gradient(prediction, input_tensor).numpy()[0]
+
+        # Unnormalize gradient to pixel space
+        dx = grad[0] / self.width
+        dy = grad[1] / self.height
+        return np.array([dx, dy])
+
 
     def check_if_valid(self, a, b):
         """
@@ -161,33 +177,48 @@ class RRT(GridMap):
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
         self.get_logger().info("============== RRT Search =============")
-        self.get_logger().info("TEST MODEL READ")
-        x, y = self.random_point()
-        point = self.query_gradient(x, y)
-        self.get_logger().info(f"Point: {point}")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
+        
         while True:
             # Draw random point
             random_pt = self.random_point()
-            # Find the closest vertex in the graph to the random point
+
+            # === 2. Check if occupied using model prediction ===
+            for u in range(10):  # Try up to 5 nudges
+                occ_prob = self.query_gradient(*random_pt)
+                if occ_prob < 0.5:
+                    break  # It's in free space
+                # Use gradient to move toward free space
+                grad = self.gradient_at(*random_pt)
+                step_size = 2.0
+                random_pt = np.array(random_pt) - grad * step_size
+                # Clip to bounds
+                random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
+                random_pt[1] = np.clip(random_pt[1], 0, self.height - 1)
+
+            # === 3. Find nearest node in the tree ===
             closest = self.find_closest(random_pt)
+            
             # Find the new point on the segment connecting closest and pt
             new_pt = self.new_pt(random_pt, closest)
+            
             # Check if the new point is valid
             if not self.check_if_valid(closest, new_pt):
                 continue
+          
             # Add the new point to the graph
             self.parent[tuple(new_pt)] = tuple(closest)  # Ensure keys and values are tuples
             # Publish the search tree
             self.publish_search()
+            
             # Check if we reached the goal
             if self.check_if_valid(new_pt, self.end):
-                self.parent[tuple(self.end)] = tuple(new_pt)  # Ensure end is a tuple
-                print("Goal reached!")
+                self.parent[tuple(self.end)] = tuple(new_pt)
+                self.get_logger().info("Goal reached!")
                 break
-        else:
-            print("Maximum iterations reached. Goal not found.")
-            return  # Exit if the goal is not found within the iteration limit
+            # else:
+            #     print("Maximum iterations reached. Goal not found.")
+            #     return  # Exit if the goal is not found within the iteration limit
 
         # Publish the path
         path = []

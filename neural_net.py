@@ -42,12 +42,21 @@ def neural_net():
 
 
 
+    # # Define the neural network architecture
+    # model = tf.keras.models.Sequential([
+    #     tf.keras.layers.Dense(128, activation='relu', input_shape=(2,)),
+    #     tf.keras.layers.Dense(64, activation='relu'),
+    #     tf.keras.layers.Dense(1, activation='sigmoid')
+    # ])
+    
     # Define the neural network architecture
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(128, activation='relu', input_shape=(2,)),
-        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(256, activation='tanh', input_shape=(2,)),
+        tf.keras.layers.Dense(128, activation='tanh'),
+        tf.keras.layers.Dense(64, activation='tanh'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
+
 
 
     # Compile the model
@@ -75,9 +84,9 @@ def neural_net():
 
 
     # Init early stop
-    callback = StopAtAccuracy(target_acc = 0.95)
+    callback = StopAtAccuracy(target_acc = 0.98)
     # Train the model
-    model.fit(train_input, train_output, epochs=5000, batch_size=8, verbose=2, callbacks=[callback])
+    model.fit(train_input, train_output, epochs=6000, batch_size=8, verbose=2, callbacks=[callback])
     # verbose=2 for more detailed output, 1 for less detailed output, 0 for no output
 
     # Evaluate the model
@@ -86,7 +95,7 @@ def neural_net():
     print("Accuracy:", accuracy)
 
     # Save the trained model
-    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_2.keras"
+    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_3.keras"
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
     model.save(save_path)
@@ -131,14 +140,6 @@ def neural_net():
     displ = ConfusionMatrixDisplay(confusion_matrix=conf_mat)
     displ.plot()
     plt.show()
-
-
-    # Save the trained model
-    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_2.keras"
-    if not os.path.exists(os.path.dirname(save_path)):
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    model.save(save_path)
-    print("Model trained and saved!")
-
+    
 if __name__ == '__main__':
     neural_net()
