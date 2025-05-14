@@ -18,7 +18,7 @@ def show_model():
     rows, cols = grid_map.shape
         
 
-    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_3.keras'
+    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_1.keras'
     model = tf.keras.models.load_model(model_path)
 
     # Test the model on the entire map

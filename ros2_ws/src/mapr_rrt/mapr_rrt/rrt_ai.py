@@ -184,13 +184,13 @@ class RRT(GridMap):
             random_pt = self.random_point()
 
             # === 2. Check if occupied using model prediction ===
-            for u in range(10):  # Try up to 5 nudges
+            for u in range(20):  
                 occ_prob = self.query_gradient(*random_pt)
-                if occ_prob < 0.5:
+                if occ_prob < 0.4:
                     break  # It's in free space
                 # Use gradient to move toward free space
                 grad = self.gradient_at(*random_pt)
-                step_size = 2.0
+                step_size = 1.0
                 random_pt = np.array(random_pt) - grad * step_size
                 # Clip to bounds
                 random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
@@ -223,11 +223,18 @@ class RRT(GridMap):
         # Publish the path
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
-        while current is not None:
+        visited = set()
+        while current is not None and current not in visited:
             path.append(current)
-            current = self.parent[current]
+            visited.add(current)
+            current = self.parent.get(current, None)
         path.reverse()
-
+        
+        # add the starting point
+        # if path and path[0] != tuple(self.start):
+        #     path = [tuple(self.start)] + path
+        
+        print("Path found:", path)
         # Publish the path
         self.publish_path(path)
 
