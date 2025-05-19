@@ -189,13 +189,30 @@ class RRT(GridMap):
             # === 2. Check if occupied using model prediction ===
             for u in range(20):  
                 occ_prob = self.query_gradient(*random_pt)
+                
+                # Idk which threshold is good
+                if occ_prob < 0.8:
+                    break
+                    
                 if self.map.data[int(random_pt[1]), int(random_pt[0])] == 100:
                     break
+                    
                 # Use gradient to move toward free space
                 grad = self.gradient_at(*random_pt)
-                step_size = 0.1
-                self.get_logger().info(f"Gradient at {random_pt}: {grad}")
+                
+                # Normalize the gradient for consistent step sizes
+                grad_norm = np.linalg.norm(grad)
+                if grad_norm > 0:
+                    grad = grad / grad_norm
+                
+                # Adaptive step size based on occupancy probability
+                step_size = 0.2 * (1.0 + 2.0 * occ_prob)  # Move more aggressively in highly occupied areas
+                
+                self.get_logger().info(f"Point: {random_pt}, Occ: {occ_prob:.2f}, Gradient: {grad}, Step: {step_size:.2f}")
+                
+                # Move against the gradient (toward free space)
                 random_pt = np.array(random_pt) - grad * step_size
+                
                 # Clip to bounds
                 random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
                 random_pt[1] = np.clip(random_pt[1], 0, self.height - 1)
