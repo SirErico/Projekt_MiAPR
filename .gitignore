@@ -10,5 +10,8 @@ log
 *.keras
 *.h5
 *.hdf5
-pictures/
+*.npy
+
 ptxas
+pictures/
+map_data.csv
