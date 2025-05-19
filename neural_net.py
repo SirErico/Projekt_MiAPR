@@ -5,6 +5,7 @@ from tensorflow.python.client import device_lib
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import pandas as pd
 import os
 
 
@@ -15,30 +16,50 @@ def neural_net():
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
-    print("Grid map shape:", grid_map.shape) # (30, 30) - map
+    print("Grid map shape:", grid_map.shape)  # (30, 30) - map
     rows, cols = grid_map.shape
+    print(rows, cols)
 
+    # Create a grid of normalized coordinates
+    x = np.linspace(0, 1, num=1000)
+    y = np.linspace(0, 1, num=1000)
+    X, Y = np.meshgrid(x, y)
 
-    # Normalize the input data
-    map_input = []
-    map_output = []
-    for i in range(grid_map.shape[0]):
-        for j in range(grid_map.shape[1]):
-            map_input.append([j / grid_map.shape[1], i / grid_map.shape[0]])
-            # Normalized occupancy:
-            # Normalize pixel intensity to [0, 1]
-            normalized_val = grid_map[i, j] / 255.0
-            map_output.append(1.0 - normalized_val)
-            # map_output.append(1 if grid_map[i, j] == 0 else 0)
+    # Flatten and stack coordinates
+    map_input = np.column_stack((X.ravel(), Y.ravel()))
 
-    map_input = np.array(map_input)
-    map_output = np.array(map_output)
+    # Convert normalized coordinates to grid indices
+    grid_x = np.clip(np.round(X * (cols - 1)), 0, cols - 1).astype(int)
+    grid_y = np.clip(np.round(Y * (rows - 1)), 0, rows - 1).astype(int)
+
+    # Get output values directly using the indices
+    map_output = 1.0 - (grid_map[grid_y, grid_x] / 255.0).ravel()
+
+    print("Map input shape:", map_input.shape)  # Should be (1000000, 2)
+    print("Map output shape:", map_output.shape)  # Should be (1000000,)
+
+    # Create a DataFrame
+    df = pd.DataFrame(map_input, columns=['x', 'y'])
+    df['output'] = map_output
+
+    # Save to CSV
+    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data.csv"
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+    df.to_csv(csv_path, index=False)
+    print(f"Data saved to {csv_path}")
+
+    # Load from CSV
+    df = pd.read_csv(csv_path)
+    train_input = df[['x', 'y']].values
+    train_output = df['output'].values
+    print(map_input.shape)
+    print(map_output.shape)
 
     # Split the data into training and testing sets
     # train_input, test_input, train_output, test_output = train_test_split(map_input, map_output, test_size=0.1, random_state=42)
     # Not splitting the data for now
-    train_input = map_input
-    train_output = map_output
+    # train_input = map_input
+    # train_output = map_output
 
 
 
@@ -51,8 +72,8 @@ def neural_net():
     
     # Define the neural network architecture
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(256, activation='tanh', input_shape=(2,)),
-        tf.keras.layers.Dense(128, activation='tanh'),
+        tf.keras.layers.Dense(64, activation='tanh', input_shape=(2,)),
+        tf.keras.layers.Dense(64, activation='tanh'),
         tf.keras.layers.Dense(64, activation='tanh'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
@@ -86,7 +107,7 @@ def neural_net():
     # Init early stop
     callback = StopAtAccuracy(target_acc = 0.98)
     # Train the model
-    model.fit(train_input, train_output, epochs=6000, batch_size=8, verbose=2, callbacks=[callback])
+    model.fit(train_input, train_output, epochs=6000, batch_size=128, verbose=2, callbacks=[callback])
     # verbose=2 for more detailed output, 1 for less detailed output, 0 for no output
 
     # Evaluate the model
@@ -95,27 +116,18 @@ def neural_net():
     print("Accuracy:", accuracy)
 
     # Save the trained model
-    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_3.keras"
+    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_5.keras"
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
     model.save(save_path)
     print("Model trained and saved!")
 
 
-    # Test the model on the entire map
-    height, width = grid_map.shape
-    test_map_input = []
-
-    # Generate normalized input for every point in the map
-    for i in range(height):
-        for j in range(width):
-            test_map_input.append([j / width, i / height])
-
-    test_map_input = np.array(test_map_input)
+    test_map_input = np.array(train_input)
 
     # Predict occupancy for the entire map
     predictions = model.predict(test_map_input)
-    predictions = predictions.reshape((height, width))  # Reshape predictions to match the map dimensions
+    predictions = predictions.reshape((rows, cols))  # Reshape predictions to match the map dimensions
 
     plt.figure(figsize=(20, 10))
     plt.subplot(1,2,1)

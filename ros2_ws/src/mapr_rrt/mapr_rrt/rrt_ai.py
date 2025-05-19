@@ -55,8 +55,8 @@ class RRT(GridMap):
         grad = tape.gradient(prediction, input_tensor).numpy()[0]
 
         # Unnormalize gradient to pixel space
-        dx = grad[0] / self.width
-        dy = grad[1] / self.height
+        dx = grad[0] * self.width
+        dy = grad[1] * self.height
         return np.array([dx, dy])
 
 
@@ -183,14 +183,18 @@ class RRT(GridMap):
             # Draw random point
             random_pt = self.random_point()
 
+            # TODO więcej próbek, mniejsza sieć
+            # 10 punktow i wyznaczyc gradient
+            # optymalizacja stepsize sprobowac
             # === 2. Check if occupied using model prediction ===
             for u in range(20):  
                 occ_prob = self.query_gradient(*random_pt)
-                if occ_prob < 0.4:
-                    break  # It's in free space
+                if self.map.data[int(random_pt[1]), int(random_pt[0])] == 100:
+                    break
                 # Use gradient to move toward free space
                 grad = self.gradient_at(*random_pt)
-                step_size = 1.0
+                step_size = 0.1
+                self.get_logger().info(f"Gradient at {random_pt}: {grad}")
                 random_pt = np.array(random_pt) - grad * step_size
                 # Clip to bounds
                 random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
