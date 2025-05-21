@@ -4,9 +4,16 @@ import tensorflow as tf
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import pandas as pd
 import os
 
 def show_model():
+    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data.csv"
+    # Load from CSV
+    df = pd.read_csv(csv_path)
+    test_map_input = df[['x', 'y']].values
+    train_output = df['output'].values
+    
     # Load the gridmap data
     os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
     map_file = "map.pgm"
@@ -16,16 +23,8 @@ def show_model():
     print("Grid map shape:", grid_map.shape) # (30, 30) - map
     rows, cols = grid_map.shape
         
-    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_5.keras'
+    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_8.keras'
     model = tf.keras.models.load_model(model_path)
-
-    # Create a grid of normalized coordinates for 1000x1000 resolution
-    x = np.linspace(0, 1, num=1000)
-    y = np.linspace(0, 1, num=1000)
-    X, Y = np.meshgrid(x, y)
-    
-    # Flatten and stack coordinates
-    test_map_input = np.column_stack((X.ravel(), Y.ravel()))
 
     # Predict occupancy for the entire map
     predictions = model.predict(test_map_input)
@@ -35,13 +34,13 @@ def show_model():
     plt.figure(figsize=(20, 6))
     
     # Original grid map (30x30)
-    plt.subplot(1, 3, 1)
+    plt.subplot(1, 2, 1)
     plt.title("Original Grid Map (30x30)")
     plt.imshow(grid_map, cmap='viridis', origin='upper')
     plt.colorbar(label="Occupancy Value")
     
     # Neural network predictions (1000x1000)
-    plt.subplot(1, 3, 2)
+    plt.subplot(1, 2, 2)
     plt.title("Neural Network Predictions (1000x1000)")
     plt.imshow(predictions, cmap='viridis', origin='upper')
     plt.colorbar(label="Occupancy Probability")
@@ -59,7 +58,7 @@ def show_model():
     # plt.imshow(difference, cmap='hot', origin='upper')
     # plt.colorbar(label="Absolute Difference")
     
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
 
 if __name__ == '__main__':
