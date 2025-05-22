@@ -16,7 +16,7 @@ def generate_launch_description():
 
     model_path_arg = DeclareLaunchArgument(
         'model_path',
-        default_value='/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_3.keras',
+        default_value='/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_9.keras',
         description='Path to the Keras model file'
     )
     

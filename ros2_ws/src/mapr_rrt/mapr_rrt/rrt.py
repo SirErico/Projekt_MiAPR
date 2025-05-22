@@ -175,6 +175,12 @@ def main(args=None):
     rrt.get_logger().info("Start graph searching!")
     time.sleep(1)
     rrt.search()
+    start_time = time.time()
+    rrt.search()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    
+    rrt.get_logger().info(f"Normal RRT path planning took {execution_time:.2f} seconds")
 
 
 if __name__ == '__main__':

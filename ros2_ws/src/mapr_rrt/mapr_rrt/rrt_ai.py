@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 import sys
 import matplotlib.pyplot as plt
+import copy
 
 np.random.seed(44)
 
@@ -93,58 +94,21 @@ class RRT(GridMap):
 
     def find_closest(self, pos):
         """
-        Finds the closest point in the graph (closest vertex or closes point on edge) to the pos argument
-        If the point is on the edge, modifies the graph to obtain the valid graph with the new point and two new edges
-        connecting existing vertices
-
-        :param pos: point in 2D
-        :return: point from the graph in 2D closest to the pos
+        Finds the closest vertex in the existing tree.
         """
+        pos = np.array(pos)
         closest = None
         min_dist = float('inf')
-        modifications = []  # Temporary list to store graph modifications
 
-        # Check all vertices in the graph
+        # Only check existing vertices (no edge modifications)
         for vertex in self.parent.keys():
-            distance = np.linalg.norm(np.array(vertex) - pos)
-            if distance < min_dist:
+            vertex = np.array(vertex)
+            distance = np.linalg.norm(vertex - pos)
+            if distance < min_dist and self.check_if_valid(vertex, pos):
                 min_dist = distance
                 closest = vertex
 
-        # Check all edges in the graph
-        for child, parent in list(self.parent.items()):  # Use list() to create a static copy of items
-            if parent is None:
-                continue  # Skip the root node
-            parent = np.array(parent)
-            child = np.array(child)
-
-            # Project pos onto the edge (parent -> child)
-            edge_vector = child - parent
-            edge_length = np.linalg.norm(edge_vector)
-            if edge_length == 0:
-                continue  # Skip degenerate edges
-            edge_unit_vector = edge_vector / edge_length
-            projection_length = np.dot(pos - parent, edge_unit_vector)
-
-            # Clamp the projection to the edge segment
-            projection_length = max(0, min(projection_length, edge_length))
-            projection_point = parent + projection_length * edge_unit_vector
-
-            # Calculate the distance from pos to the projection point
-            distance = np.linalg.norm(pos - projection_point)
-            if distance < min_dist:
-                min_dist = distance
-                closest = tuple(projection_point)
-
-                # Store the graph modifications
-                modifications.append((tuple(projection_point), tuple(parent)))
-                modifications.append((tuple(child), tuple(projection_point)))
-
-        # Apply the modifications to the graph after iteration
-        for child, parent in modifications:
-            self.parent[child] = parent
-
-        return np.array(closest)
+        return closest if closest is not None else np.array(self.start)
 
     def new_pt(self, pt, closest):
         """
@@ -182,21 +146,23 @@ class RRT(GridMap):
         while True:
             # Draw random point
             random_pt = self.random_point()
+            original_random_pt = copy.deepcopy(random_pt) # Store the original random point
 
             # TODO więcej próbek, mniejsza sieć
             # 10 punktow i wyznaczyc gradient
             # optymalizacja stepsize sprobowac
             # === 2. Check if occupied using model prediction ===
-            for u in range(20):  
+            for u in range(30):  
+                # Check if point is in bounds
+                if not (0 <= random_pt[0] < self.width and 0 <= random_pt[1] < self.height):
+                    random_pt = np.clip(random_pt, [0, 0], [self.width-1, self.height-1])
+                    break
                 occ_prob = self.query_gradient(*random_pt)
                 
                 # Idk which threshold is good
-                if occ_prob < 0.8:
+                if occ_prob < 0.50:
                     break
-                    
-                if self.map.data[int(random_pt[1]), int(random_pt[0])] == 100:
-                    break
-                    
+
                 # Use gradient to move toward free space
                 grad = self.gradient_at(*random_pt)
                 
@@ -206,16 +172,21 @@ class RRT(GridMap):
                     grad = grad / grad_norm
                 
                 # Adaptive step size based on occupancy probability
-                step_size = 0.2 * (1.0 + 2.0 * occ_prob)  # Move more aggressively in highly occupied areas
+                # step_size = 0.1 * (1.0 + 2.0 * occ_prob)  # Move more aggressively in highly occupied areas
+                step_size = 0.1 * (1.0 + occ_prob)
                 
                 self.get_logger().info(f"Point: {random_pt}, Occ: {occ_prob:.2f}, Gradient: {grad}, Step: {step_size:.2f}")
                 
                 # Move against the gradient (toward free space)
-                random_pt = np.array(random_pt) - grad * step_size
+                random_pt = random_pt - grad * step_size
                 
                 # Clip to bounds
-                random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
-                random_pt[1] = np.clip(random_pt[1], 0, self.height - 1)
+                # random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
+                # random_pt[1] = np.clip(random_pt[1], 0, self.height - 1)
+                random_pt = np.clip(random_pt, [0, 0], [self.width-1, self.height-1])
+                
+                if np.linalg.norm(random_pt - original_random_pt) < 0.01:
+                    break
 
             # === 3. Find nearest node in the tree ===
             closest = self.find_closest(random_pt)
@@ -245,17 +216,28 @@ class RRT(GridMap):
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
         visited = set()
+        if current not in self.parent:
+            self.get_logger().warn("End point not in parent dictionary")
+            return
         while current is not None and current not in visited:
             path.append(current)
             visited.add(current)
             current = self.parent.get(current, None)
+        
+        if path and tuple(self.start) not in path:
+            path.append(tuple(self.start))
         path.reverse()
         
-        # add the starting point
-        # if path and path[0] != tuple(self.start):
-        #     path = [tuple(self.start)] + path
         
         print("Path found:", path)
+        self.get_logger().info(f"Path length: {len(path)}")
+        
+        # Verify path connectivity
+        for i in range(len(path) - 1):
+            if not self.check_if_valid(path[i], path[i + 1]):
+                self.get_logger().error(f"Invalid segment between {path[i]} and {path[i + 1]}")
+     
+        
         # Publish the path
         self.publish_path(path)
 
@@ -270,7 +252,12 @@ def main(args=None):
 
     rrt.get_logger().info("Start graph searching!")
     time.sleep(1)
+    start_time = time.time()
     rrt.search()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    
+    rrt.get_logger().info(f"RRT with neural nets path planning took {execution_time:.2f} seconds")
 
 
 if __name__ == '__main__':

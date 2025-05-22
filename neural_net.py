@@ -2,9 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.python.client import device_lib
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import pandas as pd
 import os
 
@@ -16,44 +13,15 @@ def neural_net():
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
-    print("Grid map shape:", grid_map.shape)  # (30, 30) - map
     rows, cols = grid_map.shape
-    print(rows, cols)
-
-    # Create a grid of normalized coordinates
-    x = np.linspace(0, 1, num=1000)
-    y = np.linspace(0, 1, num=1000)
-    X, Y = np.meshgrid(x, y)
-
-    # Flatten and stack coordinates
-    map_input = np.column_stack((X.ravel(), Y.ravel()))
-
-    # Convert normalized coordinates to grid indices
-    grid_x = np.clip(np.round(X * (cols - 1)), 0, cols - 1).astype(int)
-    grid_y = np.clip(np.round(Y * (rows - 1)), 0, rows - 1).astype(int)
-
-    # Get output values directly using the indices
-    map_output = 1.0 - (grid_map[grid_y, grid_x] / 255.0).ravel()
-
-    print("Map input shape:", map_input.shape)  # Should be (1000000, 2)
-    print("Map output shape:", map_output.shape)  # Should be (1000000,)
-
-    # Create a DataFrame
-    df = pd.DataFrame(map_input, columns=['x', 'y'])
-    df['output'] = map_output
-
-    # Save to CSV
+    
     csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data.csv"
-    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
-    df.to_csv(csv_path, index=False)
-    print(f"Data saved to {csv_path}")
-
     # Load from CSV
     df = pd.read_csv(csv_path)
     train_input = df[['x', 'y']].values
     train_output = df['output'].values
-    print(map_input.shape)
-    print(map_output.shape)
+    print(train_input.shape)
+    print(train_output.shape)
 
     # Split the data into training and testing sets
     # train_input, test_input, train_output, test_output = train_test_split(map_input, map_output, test_size=0.1, random_state=42)
@@ -83,14 +51,6 @@ def neural_net():
     # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
-    # Early stopping callback
-    # early_stopping = tf.keras.callbacks.EarlyStopping(
-    #     monitor='accuracy',
-    #     patience=0,
-    #     min_delta=0.95 - 0.001,
-    #     restore_best_weights=True
-    # )
-
     # Early Stoppage of training at given accuracy
     class StopAtAccuracy(tf.keras.callbacks.Callback):
         def __init__(self, target_acc):
@@ -102,12 +62,25 @@ def neural_net():
             if acc is not None and acc >= self.target_acc:
                 print(f"\nStopping training: reached {acc:.2f} accuracy at epoch {epoch + 1}")
                 self.model.stop_training = True
+                
+    # Early Stoppage of training at given accuracy
+    class StopAtLoss(tf.keras.callbacks.Callback):
+        def __init__(self, target_loss):
+            super().__init__()
+            self.target_loss = target_loss
+
+        def on_epoch_end(self, epoch, logs):
+            loss_ = logs.get("loss")
+            if loss_ is not None and loss_ <= self.target_loss:
+                print(f"\nStopping training: reached {loss_:.2f} loss at epoch {epoch + 1}")
+                self.model.stop_training = True
 
 
     # Init early stop
-    callback = StopAtAccuracy(target_acc = 0.98)
+    callback_acc = StopAtAccuracy(target_acc = 0.98)
+    # callback_loss = StopAtLoss(target_loss=0.005)
     # Train the model
-    model.fit(train_input, train_output, epochs=6000, batch_size=128, verbose=2, callbacks=[callback])
+    model.fit(train_input, train_output, epochs=6000, batch_size=256, verbose=2, callbacks=[callback_acc])
     # verbose=2 for more detailed output, 1 for less detailed output, 0 for no output
 
     # Evaluate the model
@@ -116,18 +89,19 @@ def neural_net():
     print("Accuracy:", accuracy)
 
     # Save the trained model
-    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_5.keras"
+    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_10.keras"
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
     model.save(save_path)
     print("Model trained and saved!")
 
 
-    test_map_input = np.array(train_input)
+    test_map_input = train_input
 
+    print("Now predicting on train data!")
     # Predict occupancy for the entire map
     predictions = model.predict(test_map_input)
-    predictions = predictions.reshape((rows, cols))  # Reshape predictions to match the map dimensions
+    predictions = predictions.reshape((1000, 1000))  # Reshape predictions to match the map dimensions
 
     plt.figure(figsize=(20, 10))
     plt.subplot(1,2,1)
@@ -143,15 +117,26 @@ def neural_net():
     plt.show()
 
 
-    # Calculate the confusion matrix
-    preds = model.predict(train_input)
-    predicted = tf.squeeze(preds)
-    predicted = np.array([1 if x >= 0.5 else 0 for x in predicted])
-    actual = np.array(train_output)
-    conf_mat = confusion_matrix(actual, predicted)
-    displ = ConfusionMatrixDisplay(confusion_matrix=conf_mat)
-    displ.plot()
-    plt.show()
+    # # Calculate the confusion matrix
+    # preds = model.predict(train_input)
+    # predicted = tf.squeeze(preds)
+    # predicted = np.array([1 if x >= 0.5 else 0 for x in predicted])
+    # actual = np.array(train_output)
+    # conf_mat = confusion_matrix(actual, predicted)
+    # displ = ConfusionMatrixDisplay(confusion_matrix=conf_mat)
+    # displ.plot()
+    # plt.show()
     
 if __name__ == '__main__':
     neural_net()
+    
+    
+    
+'''
+occupancy_model_5 -> new 1000x1000 neural net, acc 98% b_size = 128
+occupancy_model_6 -> new nn, 90% acc, b_size = 64 
+SHOULD USE BIGGER BATCH SIZE
+occupancy_model_7 -> 0.9 acc, b_size = 256 - also pretty bad
+occupancy_model_8 -> 0.96 acc, b_size = 256
+occupancy_model_9 -> tanh activation func, 0.98 acc, b_size = 256
+'''
