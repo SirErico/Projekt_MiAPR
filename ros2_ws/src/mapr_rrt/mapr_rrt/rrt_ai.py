@@ -29,10 +29,7 @@ class RRT(GridMap):
 
     def query_gradient(self, x, y):
         """
-        Query the trained model for the gradient (occupancy probability) at a given point.
-        :param x: x-coordinate (normalized)
-        :param y: y-coordinate (normalized)
-        :return: Occupancy probability (gradient)
+        Query the trained model for the occupancy probability at a given point.
         """
         # Normalize the input coordinates
         normalized_input = np.array([[x / self.width, y / self.height]])
@@ -46,8 +43,8 @@ class RRT(GridMap):
 
     def gradient_at(self, x, y):
         """
-        Compute gradient of model output with respect to input (x, y), both in map pixel space.
-        :return: gradient vector as np.array([dx, dy])
+        Compute gradient of model output with respect to input (x, y).
+        Returns the gradient vector as np.array([dx, dy])
         """
         input_tensor = tf.convert_to_tensor([[x / self.width, y / self.height]], dtype=tf.float32)
         with tf.GradientTape() as tape:
@@ -64,9 +61,6 @@ class RRT(GridMap):
     def check_if_valid(self, a, b):
         """
         Checks if the segment connecting a and b lies in the free space.
-        :param a: point in 2D
-        :param b: point in 2D
-        :return: boolean
         """
         num_samples = 100
         a = np.array([a[0], a[1]])  # Convert tuple to numpy array
@@ -86,7 +80,6 @@ class RRT(GridMap):
     def random_point(self):
         """
         Draws random point in 2D
-        :return: point in 2D
         """
         x = np.random.random(1) * self.width
         y = np.random.random(1) * self.height
@@ -94,28 +87,66 @@ class RRT(GridMap):
 
     def find_closest(self, pos):
         """
-        Finds the closest vertex in the existing tree.
+        Finds the closest point in the graph (closest vertex or closest point on edge) to the pos argument.
+        If the point is on the edge, modifies the graph to include the new point.
         """
         pos = np.array(pos)
         closest = None
         min_dist = float('inf')
+        modifications = []
 
-        # Only check existing vertices (no edge modifications)
+        # Check all vertices in the graph
+        # the check_if_valid is important -> with it, the path isnt broken
         for vertex in self.parent.keys():
-            vertex = np.array(vertex)
-            distance = np.linalg.norm(vertex - pos)
+            vertex_array = np.array(vertex)
+            distance = np.linalg.norm(vertex_array - pos)
             if distance < min_dist and self.check_if_valid(vertex, pos):
                 min_dist = distance
                 closest = vertex
 
-        return closest if closest is not None else np.array(self.start)
+        # Check all edges in the graph
+        for child, parent in list(self.parent.items()):
+            if parent is None:
+                continue  # Skip the root node
+            parent = np.array(parent)
+            child = np.array(child)
+
+            # Project pos onto the edge (parent -> child)
+            edge_vector = child - parent
+            edge_length = np.linalg.norm(edge_vector)
+            if edge_length == 0:
+                continue  # Skip degenerate edges
+            edge_unit_vector = edge_vector / edge_length
+            projection_length = np.dot(pos - parent, edge_unit_vector)
+
+            # Clamp the projection to the edge segment
+            projection_length = max(0, min(projection_length, edge_length))
+            projection_point = parent + projection_length * edge_unit_vector
+
+            # Calculate the distance from pos to the projection point
+            distance = np.linalg.norm(pos - projection_point)
+            
+            # Check if the distance is smaller than the min_distance from vertices
+            # Only consider the projection point if the path to it is valid
+            if distance < min_dist and self.check_if_valid(projection_point, pos):
+                min_dist = distance
+                closest = tuple(projection_point)
+
+                # Add the new point to the graph and slice the edge
+                if projection_length > 0 and projection_length < edge_length:
+                    # Store the graph modifications
+                    modifications.append((tuple(projection_point), tuple(parent)))
+                    modifications.append((tuple(child), tuple(projection_point)))
+
+        # Apply the modifications to the graph after iteration
+        for child, parent in modifications:
+            self.parent[child] = parent
+
+        return np.array(closest) if closest is not None else np.array(self.start)
 
     def new_pt(self, pt, closest):
         """
         Finds last point in the free space on the segment connecting closest with pt
-        :param pt: point in 2D
-        :param closest: vertex in the tree (point in 2D)
-        :return: point in 2D
         """
         closest_1 = np.array([closest[0], closest[1]])  # Convert tuple to numpy array
         pt_1 = np.array([pt[0], pt[1]])  # Convert tuple to numpy array
@@ -147,11 +178,8 @@ class RRT(GridMap):
             # Draw random point
             random_pt = self.random_point()
             original_random_pt = copy.deepcopy(random_pt) # Store the original random point
+            shifts = 0
 
-            # TODO więcej próbek, mniejsza sieć
-            # 10 punktow i wyznaczyc gradient
-            # optymalizacja stepsize sprobowac
-            # === 2. Check if occupied using model prediction ===
             for u in range(30):  
                 # Check if point is in bounds
                 if not (0 <= random_pt[0] < self.width and 0 <= random_pt[1] < self.height):
@@ -160,7 +188,7 @@ class RRT(GridMap):
                 occ_prob = self.query_gradient(*random_pt)
                 
                 # Idk which threshold is good
-                if occ_prob < 0.50:
+                if occ_prob < 0.80:
                     break
 
                 # Use gradient to move toward free space
@@ -173,13 +201,13 @@ class RRT(GridMap):
                 
                 # Adaptive step size based on occupancy probability
                 # step_size = 0.1 * (1.0 + 2.0 * occ_prob)  # Move more aggressively in highly occupied areas
-                step_size = 0.1 * (1.0 + occ_prob)
+                step_size = 0.05 * (1.0 + 0.5 * occ_prob)
                 
                 self.get_logger().info(f"Point: {random_pt}, Occ: {occ_prob:.2f}, Gradient: {grad}, Step: {step_size:.2f}")
                 
                 # Move against the gradient (toward free space)
                 random_pt = random_pt - grad * step_size
-                
+                shifts += 1
                 # Clip to bounds
                 # random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
                 # random_pt[1] = np.clip(random_pt[1], 0, self.height - 1)
@@ -187,14 +215,12 @@ class RRT(GridMap):
                 
                 if np.linalg.norm(random_pt - original_random_pt) < 0.01:
                     break
-
-            # === 3. Find nearest node in the tree ===
+            self.get_logger().info(f"Przesuniecia: {shifts}")
+            
             closest = self.find_closest(random_pt)
             
-            # Find the new point on the segment connecting closest and pt
             new_pt = self.new_pt(random_pt, closest)
             
-            # Check if the new point is valid
             if not self.check_if_valid(closest, new_pt):
                 continue
           
