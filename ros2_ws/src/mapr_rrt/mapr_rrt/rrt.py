@@ -50,6 +50,7 @@ class RRT(GridMap):
         :param pos: point in 2D
         :return: point from the graph in 2D closest to the pos
         """
+        pos = np.array(pos)
         closest = None
         min_dist = float('inf')
         modifications = []  # Temporary list to store graph modifications
@@ -57,9 +58,13 @@ class RRT(GridMap):
         # Check all vertices in the graph
         for vertex in self.parent.keys():
             distance = np.linalg.norm(np.array(vertex) - pos)
-            if distance < min_dist:
+            if distance < min_dist and self.check_if_valid(vertex, pos):
                 min_dist = distance
                 closest = vertex
+
+        # If we found a close enough vertex, don't bother checking edges
+        if min_dist < 0.5:  # Threshold to prefer vertices when they're close enough
+            return np.array(closest)
 
         # Check all edges in the graph
         for child, parent in list(self.parent.items()):  # Use list() to create a static copy of items
@@ -82,19 +87,22 @@ class RRT(GridMap):
 
             # Calculate the distance from pos to the projection point
             distance = np.linalg.norm(pos - projection_point)
-            if distance < min_dist:
+            
+            # Only consider the projection point if the path to it is valid
+            if distance < min_dist and self.check_if_valid(projection_point, pos):
                 min_dist = distance
                 closest = tuple(projection_point)
 
-                # Store the graph modifications
-                modifications.append((tuple(projection_point), tuple(parent)))
-                modifications.append((tuple(child), tuple(projection_point)))
+                # Only add edge modifications if we're actually splitting an edge
+                if 0 < projection_length < edge_length and distance < 0.5:  # Only split edges for close points
+                    modifications.append((tuple(projection_point), tuple(parent)))
+                    modifications.append((tuple(child), tuple(projection_point)))
 
         # Apply the modifications to the graph after iteration
         for child, parent in modifications:
             self.parent[child] = parent
 
-        return np.array(closest)
+        return np.array(closest) if closest is not None else None
 
     def new_pt(self, pt, closest):
         """
@@ -134,6 +142,11 @@ class RRT(GridMap):
             random_pt = self.random_point()
             # Find the closest vertex in the graph to the random point
             closest = self.find_closest(random_pt)
+            
+            # If no valid closest point found, try again
+            if closest is None:
+                continue
+                
             # Find the new point on the segment connecting closest and pt
             new_pt = self.new_pt(random_pt, closest)
             # Check if the new point is valid
@@ -174,7 +187,6 @@ def main(args=None):
 
     rrt.get_logger().info("Start graph searching!")
     time.sleep(1)
-    rrt.search()
     start_time = time.time()
     rrt.search()
     end_time = time.time()

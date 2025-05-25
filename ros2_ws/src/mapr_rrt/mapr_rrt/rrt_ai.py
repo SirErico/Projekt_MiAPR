@@ -104,6 +104,10 @@ class RRT(GridMap):
                 min_dist = distance
                 closest = vertex
 
+        # If we found a close enough vertex, don't bother checking edges
+        if min_dist < 0.5:
+            return np.array(closest)
+
         # Check all edges in the graph
         for child, parent in list(self.parent.items()):
             if parent is None:
@@ -132,9 +136,8 @@ class RRT(GridMap):
                 min_dist = distance
                 closest = tuple(projection_point)
 
-                # Add the new point to the graph and slice the edge
-                if projection_length > 0 and projection_length < edge_length:
-                    # Store the graph modifications
+                # Only add edge modifications if we're actually splitting an edge
+                if 0 < projection_length < edge_length and distance < 0.5:  # Only split edges for close points
                     modifications.append((tuple(projection_point), tuple(parent)))
                     modifications.append((tuple(child), tuple(projection_point)))
 
@@ -142,7 +145,7 @@ class RRT(GridMap):
         for child, parent in modifications:
             self.parent[child] = parent
 
-        return np.array(closest) if closest is not None else np.array(self.start)
+        return np.array(closest) if closest is not None else None
 
     def new_pt(self, pt, closest):
         """
@@ -188,7 +191,7 @@ class RRT(GridMap):
                 occ_prob = self.query_gradient(*random_pt)
                 
                 # Idk which threshold is good
-                if occ_prob < 0.80:
+                if occ_prob < 0.90:
                     break
 
                 # Use gradient to move toward free space
@@ -219,6 +222,10 @@ class RRT(GridMap):
             
             closest = self.find_closest(random_pt)
             
+            # If no valid closest point found, try again
+            if closest is None:
+                continue
+            
             new_pt = self.new_pt(random_pt, closest)
             
             if not self.check_if_valid(closest, new_pt):
@@ -234,9 +241,6 @@ class RRT(GridMap):
                 self.parent[tuple(self.end)] = tuple(new_pt)
                 self.get_logger().info("Goal reached!")
                 break
-            # else:
-            #     print("Maximum iterations reached. Goal not found.")
-            #     return  # Exit if the goal is not found within the iteration limit
 
         # Publish the path
         path = []
@@ -254,7 +258,6 @@ class RRT(GridMap):
             path.append(tuple(self.start))
         path.reverse()
         
-        
         print("Path found:", path)
         self.get_logger().info(f"Path length: {len(path)}")
         
@@ -262,7 +265,6 @@ class RRT(GridMap):
         for i in range(len(path) - 1):
             if not self.check_if_valid(path[i], path[i + 1]):
                 self.get_logger().error(f"Invalid segment between {path[i]} and {path[i + 1]}")
-     
         
         # Publish the path
         self.publish_path(path)
