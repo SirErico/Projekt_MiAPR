@@ -137,9 +137,11 @@ class RRT(GridMap):
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
+        number_of_points = 0
         while True:
             # Draw random point
             random_pt = self.random_point()
+            number_of_points += 1
             # Find the closest vertex in the graph to the random point
             closest = self.find_closest(random_pt)
             
@@ -175,7 +177,7 @@ class RRT(GridMap):
 
         # Publish the path
         self.publish_path(path)
-
+        self.get_logger().info(f"Number of points: {number_of_points}")
 
 def main(args=None):
     rclpy.init(args=args)

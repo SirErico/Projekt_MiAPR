@@ -176,10 +176,11 @@ class RRT(GridMap):
         """
         self.get_logger().info("============== RRT Search =============")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
-        
+        number_of_points = 0
         while True:
             # Draw random point
             random_pt = self.random_point()
+            number_of_points += 1
             original_random_pt = copy.deepcopy(random_pt) # Store the original random point
             shifts = 0
 
@@ -260,7 +261,7 @@ class RRT(GridMap):
         
         print("Path found:", path)
         self.get_logger().info(f"Path length: {len(path)}")
-        
+        self.get_logger().info(f"Number of points: {number_of_points}")
         # Verify path connectivity
         for i in range(len(path) - 1):
             if not self.check_if_valid(path[i], path[i + 1]):
