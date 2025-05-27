@@ -23,7 +23,7 @@ def show_model():
     print("Grid map shape:", grid_map.shape) # (30, 30) - map
     rows, cols = grid_map.shape
         
-    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_8.keras'
+    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test1.keras'
     model = tf.keras.models.load_model(model_path)
 
     # Predict occupancy for the entire map

@@ -3,7 +3,7 @@ import os
 import time
 from mapr_rrt.grid_map import GridMap
 import numpy as np
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 0 = all logs, 1 = filter INFO, 2 = filter WARNING
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  # 0 = all logs, 1 = filter INFO, 2 = filter WARNING
 import tensorflow as tf
 from tensorflow import keras
 import sys
@@ -184,7 +184,7 @@ class RRT(GridMap):
             original_random_pt = copy.deepcopy(random_pt) # Store the original random point
             shifts = 0
 
-            for u in range(30):  
+            for u in range(20):  
                 # Check if point is in bounds
                 if not (0 <= random_pt[0] < self.width and 0 <= random_pt[1] < self.height):
                     random_pt = np.clip(random_pt, [0, 0], [self.width-1, self.height-1])
@@ -205,9 +205,9 @@ class RRT(GridMap):
                 
                 # Adaptive step size based on occupancy probability
                 # step_size = 0.1 * (1.0 + 2.0 * occ_prob)  # Move more aggressively in highly occupied areas
-                step_size = 0.05 * (1.0 + 0.5 * occ_prob)
+                step_size = 0.01 * (1.0 + 0.5 * occ_prob)
                 
-                self.get_logger().info(f"Point: {random_pt}, Occ: {occ_prob:.2f}, Gradient: {grad}, Step: {step_size:.2f}")
+                self.get_logger().info(f"Point: {random_pt}, Occ: {occ_prob:.2f}, Gradient: {grad}, Step: {step_size:.2f} \n ======PRZESUWAM====== \n")
                 
                 # Move against the gradient (toward free space)
                 random_pt = random_pt - grad * step_size
@@ -243,20 +243,11 @@ class RRT(GridMap):
                 self.get_logger().info("Goal reached!")
                 break
 
-        # Publish the path
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
-        visited = set()
-        if current not in self.parent:
-            self.get_logger().warn("End point not in parent dictionary")
-            return
-        while current is not None and current not in visited:
+        while current is not None:
             path.append(current)
-            visited.add(current)
-            current = self.parent.get(current, None)
-        
-        if path and tuple(self.start) not in path:
-            path.append(tuple(self.start))
+            current = self.parent.get(current)
         path.reverse()
         
         print("Path found:", path)

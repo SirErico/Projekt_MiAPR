@@ -39,10 +39,16 @@ def neural_net():
     # ])
     
     # Define the neural network architecture
+    # model = tf.keras.models.Sequential([
+    #     tf.keras.layers.Dense(64, activation='tanh', input_shape=(2,)),
+    #     tf.keras.layers.Dense(64, activation='tanh'),
+    #     tf.keras.layers.Dense(64, activation='tanh'),
+    #     tf.keras.layers.Dense(1, activation='sigmoid')
+    # ])
+    
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(64, activation='tanh', input_shape=(2,)),
-        tf.keras.layers.Dense(64, activation='tanh'),
-        tf.keras.layers.Dense(64, activation='tanh'),
+        tf.keras.layers.Dense(16, activation='tanh', input_shape=(2,)),
+        tf.keras.layers.Dense(16, activation='tanh'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
 
@@ -77,7 +83,7 @@ def neural_net():
 
 
     # Init early stop
-    callback_acc = StopAtAccuracy(target_acc = 0.98)
+    callback_acc = StopAtAccuracy(target_acc = 0.95)
     # callback_loss = StopAtLoss(target_loss=0.005)
     # Train the model
     model.fit(train_input, train_output, epochs=6000, batch_size=256, verbose=2, callbacks=[callback_acc])
@@ -89,7 +95,7 @@ def neural_net():
     print("Accuracy:", accuracy)
 
     # Save the trained model
-    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_10.keras"
+    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test1.keras"
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
     model.save(save_path)
@@ -139,4 +145,9 @@ SHOULD USE BIGGER BATCH SIZE
 occupancy_model_7 -> 0.9 acc, b_size = 256 - also pretty bad
 occupancy_model_8 -> 0.96 acc, b_size = 256
 occupancy_model_9 -> tanh activation func, 0.98 acc, b_size = 256
+
+mniejsza siec + mapa prawdopodobienstw
+train test split + parametr stratify
+przesuniecie punktu
+rrt vertices
 '''

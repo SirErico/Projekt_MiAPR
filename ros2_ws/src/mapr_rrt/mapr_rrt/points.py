@@ -48,7 +48,7 @@ def main(args=None):
     rclpy.init(args=args)
     points_publisher = PointsPublisher()
     points_publisher.add_point(1.3, 0.7, "start", (0.0, 1.0, 0.0))
-    points_publisher.add_point(2.7, 0.4, "end", (1.0, 0.0, 0.0)) 
+    points_publisher.add_point(0.2, 0.2, "end", (1.0, 0.0, 0.0)) 
     rclpy.spin(points_publisher)
     points_publisher.destroy_node()
     rclpy.shutdown()
