@@ -11,8 +11,8 @@ log
 *.h5
 *.hdf5
 *.npy
+*.csv
 
 ptxas
 pictures/
-map_data.csv
 testing.py

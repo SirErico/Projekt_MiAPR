@@ -11,7 +11,7 @@ import os
 def sample_data():
     # Load the gridmap data
     os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-    map_file = "map.pgm"
+    map_file = "map_test_blurred.pgm"
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
@@ -42,11 +42,17 @@ def sample_data():
     df['output'] = map_output
 
     # Save to CSV
-    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data.csv"
+    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     df.to_csv(csv_path, index=False)
     print(f"Data saved to {csv_path}")
     
-    
+    plt.hist(df['output'], bins=50)
+    plt.title("Occupancy value distribution")
+    plt.xlabel("Occupancy (0 = free, 1 = occupied)")
+    plt.ylabel("Frequency")
+    plt.grid()
+    plt.show()
+   
 if __name__ == '__main__':
     sample_data()

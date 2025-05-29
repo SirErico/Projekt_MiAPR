@@ -68,6 +68,14 @@ ros2 launch mapr_rrt rrt_ai_launch.py model_path:=/your/path/model.keras
 
 ---
 
+## Scripts:
+- `map_blur.py`: Applies a Gaussian blur to a map image.
+- `sample_map.py`: Samples data points from a map to create a dataset for training a neural network.
+- `show_map.py`: Visualization of the map .pgm and .csv file.
+- `neural_net.py`: Trains a neural network to learn occupancy probabilities from a map dataset.
+- `show_model.py`: Predicts occupancy for the entire map and visualizes the original and predicted occupancy maps.
+
+
 ## ⚠️ Known Problems
 ### venv Packages Not Visible
 If the virtual environment packages are not visible, add the following to your `setup.cfg` file:

@@ -8,7 +8,7 @@ import pandas as pd
 import os
 
 def show_model():
-    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data.csv"
+    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
     # Load from CSV
     df = pd.read_csv(csv_path)
     test_map_input = df[['x', 'y']].values
@@ -16,14 +16,14 @@ def show_model():
     
     # Load the gridmap data
     os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-    map_file = "map.pgm"
+    map_file = "map_test_blurred.pgm"
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
     print("Grid map shape:", grid_map.shape) # (30, 30) - map
     rows, cols = grid_map.shape
         
-    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test1.keras'
+    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test_blurred2.keras'
     model = tf.keras.models.load_model(model_path)
 
     # Predict occupancy for the entire map
