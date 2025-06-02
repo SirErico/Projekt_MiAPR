@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 import copy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
-np.random.seed(44)
-
+np.random.seed(41)
+#porownac liczbe wierzchołków w grafie i liczba wylosowanych punktów
+# ile udało się przesunąć punktów w kolizji
 class RRT(GridMap):
     def __init__(self):
         super(RRT, self).__init__()
@@ -269,15 +270,18 @@ class RRT(GridMap):
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
+            
             random_pt = self.random_point()
             number_of_points += 1
             original_random_pt = copy.deepcopy(random_pt)
             shifts = 0
             was_moved = False  # <- nowa flaga
 
-            time.sleep(0.5)
+            
 
             for u in range(20):
+                time.sleep(0.2)
+                self.add_markers(scale = 0.1)
                 if not (0 <= random_pt[0] < self.width and 0 <= random_pt[1] < self.height):
                     random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
                     break
@@ -302,10 +306,10 @@ class RRT(GridMap):
                 if grad_norm > 0:
                     grad = grad / grad_norm
 
-                step_size = 0.05 + 0.15 * occ_prob**2
+                step_size = 0.1 + 0.15 * occ_prob
                 random_pt = random_pt - grad * step_size
                 random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
-
+                print(f"PGradient w punkcie: {grad}")
                 
                 self.moved_points.append(random_pt)
 
@@ -342,7 +346,7 @@ class RRT(GridMap):
                 self.get_logger().info("Goal reached!")
                 break
 
-            self.add_markers(scale = 0.1)
+            
 
         
         path = []
