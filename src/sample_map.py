@@ -6,13 +6,15 @@ from PIL import Image
 import pandas as pd
 import os
 
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MAPS_DIR = os.path.join(BASE_DIR, "ros2_ws/src/mapr_rrt/maps")
+DATA_DIR = BASE_DIR
 
 def sample_data():
     # Load the gridmap data
 
-    os.chdir(os.path.dirname("/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-    map_file = "map_test_blurred.pgm"
+    map_file = os.path.join(MAPS_DIR, "map_double_blurred.pgm")
+
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
@@ -43,7 +45,7 @@ def sample_data():
     df['output'] = map_output
 
     # Save to CSV
-    csv_path = "/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
+    csv_path = os.path.join(DATA_DIR, "map_data_double_blurred.csv")
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     df.to_csv(csv_path, index=False)
     print(f"Data saved to {csv_path}")

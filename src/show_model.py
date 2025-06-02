@@ -5,20 +5,24 @@ from PIL import Image
 import pandas as pd
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MAPS_DIR = os.path.join(BASE_DIR, "ros2_ws/src/mapr_rrt/maps")
+DATA_DIR = BASE_DIR
+MODELS_DIR = os.path.join(BASE_DIR, "models") 
+
 def show_model():
-    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
+    csv_path = os.path.join(DATA_DIR, "map_data_double_blurred.csv")    
     df = pd.read_csv(csv_path)
     test_map_input = df[['x', 'y']].values
     
     # Load the grid map
-    os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-    map_file = "map_test_blurred.pgm"
+    map_file = os.path.join(MAPS_DIR, "map_double_blurred.pgm")
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
     print("Grid map shape:", grid_map.shape)  # Should be (30, 30)
     rows, cols = grid_map.shape
 
-    model_path = '/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test_blurred2.keras'
+    model_path = os.path.join(MODELS_DIR, "occupancy_model_double1.keras")    
     model = tf.keras.models.load_model(model_path)
 
     predictions = model.predict(test_map_input)

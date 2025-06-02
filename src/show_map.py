@@ -1,15 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import pandas as pd
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MAPS_DIR = os.path.join(BASE_DIR, "ros2_ws/src/mapr_rrt/maps")
+DATA_DIR = BASE_DIR
+
 def main():
     # Load the gridmap data
-    os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-    map_file = "map_test_blurred.pgm"
+    map_file = os.path.join(MAPS_DIR, "map_double_blurred.pgm")
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
@@ -24,7 +25,7 @@ def main():
     
     
     
-    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
+    csv_path = os.path.join(DATA_DIR, "map_data_double_blurred.csv")
     # Load from CSV
     df = pd.read_csv(csv_path)
     map_input = df[['x', 'y']].values
@@ -35,8 +36,9 @@ def main():
     
     # Populate the grid with output values
     for i in range(len(map_input)):
-        x = int(map_input[i, 0] * (grid_size - 1))
-        y = int(map_input[i, 1] * (grid_size - 1))
+        # Match the same coordinate transformation as in sample_map.py
+        x = np.clip(int(np.round(map_input[i, 0] * (grid_size - 1))), 0, grid_size - 1)
+        y = np.clip(int(np.round(map_input[i, 1] * (grid_size - 1))), 0, grid_size - 1)
         grid[y, x] = map_output[i]
     
     # Display the map

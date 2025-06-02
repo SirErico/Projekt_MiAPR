@@ -6,18 +6,19 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MAPS_DIR = os.path.join(BASE_DIR, "ros2_ws/src/mapr_rrt/maps")
+DATA_DIR = BASE_DIR
+MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 def neural_net():
     # Load the gridmap data
-    
-    os.chdir(os.path.dirname("/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
-    map_file = "map_test_blurred.pgm"
-
+    map_file = os.path.join(MAPS_DIR, "map_double_blurred.pgm")
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
     rows, cols = grid_map.shape
     
-    csv_path = "/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
+    csv_path = os.path.join(DATA_DIR, "map_data_double_blurred.csv")
     # Load from CSV
     df = pd.read_csv(csv_path)
     map_input = df[['x', 'y']].values
@@ -111,11 +112,12 @@ def neural_net():
     print("RESULTS: ", results)
 
     # Save the trained model
-    save_path = "/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/models/occupancy_model_test_blurred2.keras"
-    if not os.path.exists(os.path.dirname(save_path)):
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    save_path = os.path.join(MODELS_DIR, "occupancy_model_double1.keras")
+    if not os.path.exists(MODELS_DIR):
+        os.makedirs(MODELS_DIR, exist_ok=True)
     model.save(save_path)
-    print("Model trained and saved!")
+    print(f"Model trained and saved to: {save_path}")
+
 
     test_map_input = map_input
     print("Now predicting on train data!")

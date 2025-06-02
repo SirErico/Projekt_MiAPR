@@ -16,14 +16,14 @@ def generate_launch_description():
 
     model_path_arg = DeclareLaunchArgument(
         'model_path',
-        default_value='/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test_blurred2.keras',
+        default_value='/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_double1.keras',
         description='Path to the Keras model file'
     )
     
     model_path = LaunchConfiguration('model_path')
-    # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_small.yaml')
+    map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_double_blurred.yaml')
     # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map.yaml')
-    map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_test_blurred.yaml')
+    # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_test_blurred.yaml')
 
     map_server_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(

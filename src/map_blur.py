@@ -3,11 +3,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MAPS_DIR = os.path.join(BASE_DIR, "ros2_ws/src/mapr_rrt/maps")
+DATA_DIR = BASE_DIR
+
 def main():
-    # Set the working directory and file path
-    base_dir = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"
-    os.chdir(os.path.dirname(base_dir))
-    map_file = "map_test.pgm"
+    map_file = os.path.join(MAPS_DIR, "map_double.pgm")
+
     
     # Read the image
     img = cv.imread(map_file, cv.IMREAD_GRAYSCALE)
@@ -16,9 +18,9 @@ def main():
         return
     
     # Apply Gaussian blur
-    blurred = cv.GaussianBlur(img, (5, 5), 0)
+    blurred = cv.GaussianBlur(img, (3, 3), 0)
     
-    output_file = os.path.join(base_dir, "map_test_blurred.pgm")
+    output_file = os.path.join(MAPS_DIR, "map_double_blurred.pgm")
     cv.imwrite(output_file, blurred)
     # Display original and blurred images
     plt.figure(figsize=(20, 6))
