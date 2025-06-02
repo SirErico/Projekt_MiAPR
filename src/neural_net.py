@@ -9,14 +9,15 @@ import os
 
 def neural_net():
     # Load the gridmap data
-    os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
+    
+    os.chdir(os.path.dirname("/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
     map_file = "map_test_blurred.pgm"
 
     with open(map_file, 'rb') as pgmf:
         grid_map = plt.imread(pgmf)
     rows, cols = grid_map.shape
     
-    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
+    csv_path = "/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
     # Load from CSV
     df = pd.read_csv(csv_path)
     map_input = df[['x', 'y']].values
@@ -110,7 +111,7 @@ def neural_net():
     print("RESULTS: ", results)
 
     # Save the trained model
-    save_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/models/occupancy_model_test_blurred2.keras"
+    save_path = "/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/models/occupancy_model_test_blurred2.keras"
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
     model.save(save_path)

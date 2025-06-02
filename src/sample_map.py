@@ -10,7 +10,8 @@ import os
 
 def sample_data():
     # Load the gridmap data
-    os.chdir(os.path.dirname("/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
+
+    os.chdir(os.path.dirname("/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/ros2_ws/src/mapr_rrt/maps/"))
     map_file = "map_test_blurred.pgm"
 
     with open(map_file, 'rb') as pgmf:
@@ -42,7 +43,7 @@ def sample_data():
     df['output'] = map_output
 
     # Save to CSV
-    csv_path = "/home/eryk/RiSA/sem1/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
+    csv_path = "/home/baturo/Air/2_stopien/1_semestr/MiAPR/Projekt_MiAPR/map_data_test_blurred.csv"
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     df.to_csv(csv_path, index=False)
     print(f"Data saved to {csv_path}")

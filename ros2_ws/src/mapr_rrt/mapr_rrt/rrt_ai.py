@@ -9,7 +9,8 @@ from tensorflow import keras
 import sys
 import matplotlib.pyplot as plt
 import copy
-
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
 np.random.seed(44)
 
 class RRT(GridMap):
@@ -26,6 +27,96 @@ class RRT(GridMap):
             sys.exit(1)
         self.model = tf.keras.models.load_model(model_path)
         print("Model loaded successfully!")
+        self.valid_points = []
+        self.not_valid_points = []
+        self.moved_points = []
+        self.valid_points_pub = self.create_publisher(Marker, 'valid_points', 10)
+        self.not_valid_points_pub = self.create_publisher(Marker, 'not_valid_points', 10)
+        self.moved_points_pub = self.create_publisher(Marker, 'moved_points', 10)
+
+    def add_markers(self, scale=0.1):
+        """
+        Add markers to the visualization for the given points.
+        """
+        # Valid points
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "custom_points"
+        marker.id = 0
+        marker.type = Marker.POINTS
+        marker.action = Marker.ADD
+        # Ustawienia wyglądu punktów
+        marker.scale.x = scale
+        marker.scale.y = scale
+        marker.color.a = 1.0
+        marker.color.r = 0.0
+        marker.color.g = 1.0
+        marker.color.b = 0.0
+
+        # Dodaj punkty
+        for (x, y) in self.valid_points:
+            p = Point()
+            p.x = x
+            p.y = y
+            p.z = 0.0  # Z-coordinate for 2D points
+            marker.points.append(p)
+
+        self.valid_points_pub.publish(marker)
+
+        #Not valid points
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "custom_points"
+        marker.id = 0
+        marker.type = Marker.POINTS
+        marker.action = Marker.ADD
+        # Ustawienia wyglądu punktów
+        marker.scale.x = scale
+        marker.scale.y = scale
+        marker.color.a = 1.0
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+
+        # Dodaj punkty
+        for (x, y) in self.not_valid_points:
+            p = Point()
+            p.x = x
+            p.y = y
+            p.z = 0.0  # Z-coordinate for 2D points
+            marker.points.append(p)
+
+        self.not_valid_points_pub.publish(marker)
+
+        # Moved points
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "custom_points"
+        marker.id = 0
+        marker.type = Marker.POINTS
+        marker.action = Marker.ADD
+        # Ustawienia wyglądu punktów
+        marker.scale.x = scale
+        marker.scale.y = scale
+        marker.color.a = 1.0
+        marker.color.r = 0.0
+        marker.color.g = 0.0
+        marker.color.b = 1.0
+
+        # Dodaj punkty
+        for (x, y) in self.moved_points:
+            p = Point()
+            p.x = x
+            p.y = y
+            p.z = 0.0  # Z-coordinate for 2D points
+            marker.points.append(p)
+
+        self.moved_points_pub.publish(marker)
+
+
 
     def query_gradient(self, x, y):
         """
@@ -178,78 +269,89 @@ class RRT(GridMap):
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
-            # Draw random point
             random_pt = self.random_point()
             number_of_points += 1
-            original_random_pt = copy.deepcopy(random_pt) # Store the original random point
+            original_random_pt = copy.deepcopy(random_pt)
             shifts = 0
+            was_moved = False  # <- nowa flaga
 
-            for u in range(20):  
-                # Check if point is in bounds
+            time.sleep(0.5)
+
+            for u in range(20):
                 if not (0 <= random_pt[0] < self.width and 0 <= random_pt[1] < self.height):
-                    random_pt = np.clip(random_pt, [0, 0], [self.width-1, self.height-1])
-                    break
-                occ_prob = self.query_gradient(*random_pt)
-                
-                # Idk which threshold is good
-                if occ_prob < 0.90:
+                    random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
                     break
 
-                # Use gradient to move toward free space
+                occ_prob = self.query_gradient(*random_pt)
+                print(f"Occupancy probability at {random_pt}: {occ_prob:.2f}")
+
+                if occ_prob < 0.80:
+                    # punkt był dobry od razu
+                    if not was_moved:
+                        self.valid_points.append(original_random_pt)
+                    break
+                else:
+                    # punkt był zły, przesuwamy go
+                    if not was_moved:
+                        self.not_valid_points.append(original_random_pt)
+                       
+
+                # przesuwanie w kierunku wolnej przestrzeni
                 grad = self.gradient_at(*random_pt)
-                
-                # Normalize the gradient for consistent step sizes
                 grad_norm = np.linalg.norm(grad)
                 if grad_norm > 0:
                     grad = grad / grad_norm
-                
-                # Adaptive step size based on occupancy probability
-                # step_size = 0.1 * (1.0 + 2.0 * occ_prob)  # Move more aggressively in highly occupied areas
-                step_size = 0.01 * (1.0 + 0.5 * occ_prob)
-                
-                self.get_logger().info(f"Point: {random_pt}, Occ: {occ_prob:.2f}, Gradient: {grad}, Step: {step_size:.2f} \n ======PRZESUWAM====== \n")
-                
-                # Move against the gradient (toward free space)
+
+                step_size = 0.05 + 0.15 * occ_prob**2
                 random_pt = random_pt - grad * step_size
-                shifts += 1
-                # Clip to bounds
-                # random_pt[0] = np.clip(random_pt[0], 0, self.width - 1)
-                # random_pt[1] = np.clip(random_pt[1], 0, self.height - 1)
-                random_pt = np.clip(random_pt, [0, 0], [self.width-1, self.height-1])
+                random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
+
                 
+                self.moved_points.append(random_pt)
+
+                was_moved = True
+                shifts += 1
+
+                # jeśli punkt się praktycznie nie przesunął
                 if np.linalg.norm(random_pt - original_random_pt) < 0.01:
                     break
+
             self.get_logger().info(f"Przesuniecia: {shifts}")
-            
+
+            # if occ_prob >= 0.80:
+            #     #self.not_valid_points.append(original_random_pt)
+            #     continue  # nie przechodzimy dalej
+
+            # tu już wiemy, że random_pt ma occ_prob < 0.8 po przesunięciu
+            # sprawdzamy najbliższy punkt
             closest = self.find_closest(random_pt)
-            
-            # If no valid closest point found, try again
             if closest is None:
+                self.not_valid_points.append(original_random_pt)
                 continue
-            
+
             new_pt = self.new_pt(random_pt, closest)
-            
             if not self.check_if_valid(closest, new_pt):
+                self.not_valid_points.append(original_random_pt)
                 continue
-          
-            # Add the new point to the graph
-            self.parent[tuple(new_pt)] = tuple(closest)  # Ensure keys and values are tuples
-            # Publish the search tree
+
+            self.parent[tuple(new_pt)] = tuple(closest)
             self.publish_search()
-            
-            # Check if we reached the goal
+
             if self.check_if_valid(new_pt, self.end):
                 self.parent[tuple(self.end)] = tuple(new_pt)
                 self.get_logger().info("Goal reached!")
                 break
 
+            self.add_markers(scale = 0.1)
+
+        
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
         while current is not None:
             path.append(current)
             current = self.parent.get(current)
         path.reverse()
-        
+        self.add_markers(scale = 0.1)
         print("Path found:", path)
         self.get_logger().info(f"Path length: {len(path)}")
         self.get_logger().info(f"Number of points: {number_of_points}")
