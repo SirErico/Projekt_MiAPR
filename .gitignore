@@ -7,11 +7,12 @@ build
 install
 log
 
-*.keras
+
 *.h5
 *.hdf5
 *.npy
 *.csv
+*.xcf
 
 ptxas
 pictures/
