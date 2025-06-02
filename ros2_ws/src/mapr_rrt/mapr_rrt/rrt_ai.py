@@ -306,10 +306,10 @@ class RRT(GridMap):
                 if grad_norm > 0:
                     grad = grad / grad_norm
 
-                step_size = 0.1 + 0.15 * occ_prob
+                step_size = 0.1 + 1.0 * occ_prob
                 random_pt = random_pt - grad * step_size
                 random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
-                print(f"PGradient w punkcie: {grad}")
+                print(f"Gradient w punkcie: {grad}, STEP SIZE: {step_size}")
                 
                 self.moved_points.append(random_pt)
 
