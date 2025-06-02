@@ -43,7 +43,7 @@ class RRT(GridMap):
         marker = Marker()
         marker.header.frame_id = "map"
         marker.header.stamp = self.get_clock().now().to_msg()
-        marker.ns = "custom_points"
+        marker.ns = "valid"
         marker.id = 0
         marker.type = Marker.POINTS
         marker.action = Marker.ADD
@@ -69,8 +69,8 @@ class RRT(GridMap):
         marker = Marker()
         marker.header.frame_id = "map"
         marker.header.stamp = self.get_clock().now().to_msg()
-        marker.ns = "custom_points"
-        marker.id = 0
+        marker.ns = "invalid"
+        marker.id = 1
         marker.type = Marker.POINTS
         marker.action = Marker.ADD
         # Ustawienia wyglądu punktów
@@ -95,8 +95,8 @@ class RRT(GridMap):
         marker = Marker()
         marker.header.frame_id = "map"
         marker.header.stamp = self.get_clock().now().to_msg()
-        marker.ns = "custom_points"
-        marker.id = 0
+        marker.ns = "moved"
+        marker.id = 2
         marker.type = Marker.POINTS
         marker.action = Marker.ADD
         # Ustawienia wyglądu punktów
@@ -289,7 +289,7 @@ class RRT(GridMap):
                 occ_prob = self.query_gradient(*random_pt)
                 print(f"Occupancy probability at {random_pt}: {occ_prob:.2f}")
 
-                if occ_prob < 0.80:
+                if occ_prob < 0.50:
                     # punkt był dobry od razu
                     if not was_moved:
                         self.valid_points.append(original_random_pt)
@@ -318,7 +318,7 @@ class RRT(GridMap):
 
                 # jeśli punkt się praktycznie nie przesunął
                 if np.linalg.norm(random_pt - original_random_pt) < 0.01:
-                    break
+                    break   
 
             self.get_logger().info(f"Przesuniecia: {shifts}")
 
