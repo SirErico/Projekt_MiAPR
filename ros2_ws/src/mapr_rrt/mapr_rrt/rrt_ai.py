@@ -118,7 +118,6 @@ class RRT(GridMap):
         self.moved_points_pub.publish(marker)
 
 
-
     def query_gradient(self, x, y):
         """
         Query the trained model for the occupancy probability at a given point.
@@ -131,7 +130,6 @@ class RRT(GridMap):
         
         # Return the gradient (occupancy probability)
         return prediction[0][0]
-
 
     def gradient_at(self, x, y):
         """
@@ -148,7 +146,6 @@ class RRT(GridMap):
         dx = grad[0] * self.width
         dy = grad[1] * self.height
         return np.array([dx, dy])
-
 
     def check_if_valid(self, a, b):
         """
@@ -270,14 +267,11 @@ class RRT(GridMap):
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
-            
             random_pt = self.random_point()
             number_of_points += 1
             original_random_pt = copy.deepcopy(random_pt)
             shifts = 0
             was_moved = False  # <- nowa flaga
-
-            
 
             for u in range(20):
                 time.sleep(0.2)
@@ -299,7 +293,6 @@ class RRT(GridMap):
                     if not was_moved:
                         self.not_valid_points.append(original_random_pt)
                        
-
                 # przesuwanie w kierunku wolnej przestrzeni
                 grad = self.gradient_at(*random_pt)
                 grad_norm = np.linalg.norm(grad)
@@ -312,7 +305,6 @@ class RRT(GridMap):
                 print(f"Gradient w punkcie: {grad}, STEP SIZE: {step_size}")
                 
                 self.moved_points.append(random_pt)
-
                 was_moved = True
                 shifts += 1
 
@@ -346,9 +338,8 @@ class RRT(GridMap):
                 self.get_logger().info("Goal reached!")
                 break
 
-            
+        self.get_logger().info(f"Valid: {len(self.valid_points)} | Not valid: {len(self.not_valid_points)} | Moved: {len(self.moved_points)}")
 
-        
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
         while current is not None:
@@ -384,7 +375,6 @@ def main(args=None):
     execution_time = end_time - start_time
     
     rrt.get_logger().info(f"RRT with neural nets path planning took {execution_time:.2f} seconds")
-
 
 if __name__ == '__main__':
     main()

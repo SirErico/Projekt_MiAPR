@@ -29,13 +29,6 @@ def neural_net():
     # Split the data into training and testing sets
     # train_input, test_input, train_output, test_output = train_test_split(map_input, map_output, test_size=0.1, random_state=42, stratify=map_output)
 
-    # # Define the neural network architecture
-    # model = tf.keras.models.Sequential([
-    #     tf.keras.layers.Dense(256, activation='relu', input_shape=(2,)),
-    #     tf.keras.layers.Dense(128, activation='relu'),
-    #     tf.keras.layers.Dense(64, activation='relu'),
-    #     tf.keras.layers.Dense(1, activation='sigmoid')
-    # ])
     
     # NEURAL NET ARCHITECTURE FOR TEST_BLURRED I MAP
     model = tf.keras.models.Sequential([
