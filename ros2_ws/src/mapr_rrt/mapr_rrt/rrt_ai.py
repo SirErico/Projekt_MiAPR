@@ -299,7 +299,7 @@ class RRT(GridMap):
                 if grad_norm > 0:
                     grad = grad / grad_norm
 
-                step_size = 0.1 + 1.0 * occ_prob
+                step_size = 0.1 + 0.1 * occ_prob
                 random_pt = random_pt - grad * step_size
                 random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
                 print(f"Gradient w punkcie: {grad}, STEP SIZE: {step_size}")
@@ -311,7 +311,6 @@ class RRT(GridMap):
                 # jeśli punkt się praktycznie nie przesunął
                 if np.linalg.norm(random_pt - original_random_pt) < 0.01:
                     break   
-
             self.get_logger().info(f"Przesuniecia: {shifts}")
 
             # if occ_prob >= 0.80:
@@ -337,14 +336,18 @@ class RRT(GridMap):
                 self.parent[tuple(self.end)] = tuple(new_pt)
                 self.get_logger().info("Goal reached!")
                 break
-
+        
         self.get_logger().info(f"Valid: {len(self.valid_points)} | Not valid: {len(self.not_valid_points)} | Moved: {len(self.moved_points)}")
 
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
+        zliczanie = 0
         while current is not None:
             path.append(current)
             current = self.parent.get(current)
+            # if current.any() in self.moved_points:
+            #     zliczanie += 1
+            # BRUH
         path.reverse()
         self.add_markers(scale = 0.1)
         print("Path found:", path)
@@ -378,3 +381,12 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+"""
+zrobić raport
+porównanie rrt z rrt_nn
+dla kilku punktów końcowych
+ile wierzchołków, ile w wolnej przestrzeni, ile iteracji, długość ścieżki
+długość ścieżki euklidesowa
+
+"""
