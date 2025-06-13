@@ -34,6 +34,8 @@ class RRT(GridMap):
         self.valid_points_pub = self.create_publisher(Marker, 'valid_points', 10)
         self.not_valid_points_pub = self.create_publisher(Marker, 'not_valid_points', 10)
         self.moved_points_pub = self.create_publisher(Marker, 'moved_points', 10)
+        self.was_moved = False
+        self.count_moved = 0
 
     def add_markers(self, scale=0.1):
         """
@@ -285,11 +287,14 @@ class RRT(GridMap):
 
                 if occ_prob < 0.50:
                     # punkt był dobry od razu
+                    if self.was_moved:
+                        self.count_moved += 1
                     if not was_moved:
                         self.valid_points.append(original_random_pt)
                     break
                 else:
                     # punkt był zły, przesuwamy go
+                    self.was_moved = True
                     if not was_moved:
                         self.not_valid_points.append(original_random_pt)
                        
@@ -353,10 +358,17 @@ class RRT(GridMap):
         print("Path found:", path)
         self.get_logger().info(f"Path length: {len(path)}")
         self.get_logger().info(f"Number of points: {number_of_points}")
+        self.get_logger().info(f"Number of moved points: {self.count_moved}")
         # Verify path connectivity
         for i in range(len(path) - 1):
             if not self.check_if_valid(path[i], path[i + 1]):
                 self.get_logger().error(f"Invalid segment between {path[i]} and {path[i + 1]}")
+        
+        total_dist = 0.0
+        for i in range(len(path) - 1):
+            dist = np.linalg.norm(np.array(path[i]) - np.array(path[i+1]))
+            total_dist += dist
+        self.get_logger().info(f"Total path distance: {total_dist:.2f}")
         
         # Publish the path
         self.publish_path(path)

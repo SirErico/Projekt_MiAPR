@@ -163,21 +163,28 @@ class RRT(GridMap):
                 self.parent[tuple(self.end)] = tuple(new_pt)  # Ensure end is a tuple
                 print("Goal reached!")
                 break
-        else:
-            print("Maximum iterations reached. Goal not found.")
-            return  # Exit if the goal is not found within the iteration limit
+        # else:
+        #     print("Maximum iterations reached. Goal not found.")
+        #     return  # Exit if the goal is not found within the iteration limit
 
         # Publish the path
         path = []
-        current = tuple(self.end)  # Ensure end is a tuple
+        current = tuple(map(float, self.end)) # Ensure end is a tuple
         while current is not None:
             path.append(current)
-            current = self.parent[current]
+            current = self.parent.get(current)
+        path.append(self.start)
         path.reverse()
 
         # Publish the path
         self.publish_path(path)
         self.get_logger().info(f"Number of points: {number_of_points}")
+        
+        total_dist = 0.0
+        for i in range(len(path) - 1):
+            dist = np.linalg.norm(np.array(path[i]) - np.array(path[i+1]))
+            total_dist += dist
+        self.get_logger().info(f"Total path distance: {total_dist:.2f}")
 
 def main(args=None):
     rclpy.init(args=args)
