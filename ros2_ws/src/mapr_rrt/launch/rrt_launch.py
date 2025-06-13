@@ -13,7 +13,7 @@ def generate_launch_description():
     vertices = LaunchConfiguration('vertices', default='False')
 
     # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_small.yaml')
-    map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_test_blurred.yaml')
+    map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map_double_blurred.yaml')
     # map_path = os.path.join(get_package_share_directory('mapr_rrt'), 'maps', 'map.yaml')
 
     map_server_cmd = IncludeLaunchDescription(

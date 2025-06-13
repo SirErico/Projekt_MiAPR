@@ -169,15 +169,23 @@ class RRT(GridMap):
 
         # Publish the path
         path = []
-        current = tuple(self.end)  # Ensure end is a tuple
+        current = tuple(map(float, self.end))  # Normalize to float tuple
         while current is not None:
             path.append(current)
-            current = self.parent[current]
+            current = self.parent.get(current)  # Avoid KeyError
+        path.append(self.start)
         path.reverse()
+          # Ensure start is included in the path
 
         # Publish the path
         self.publish_path(path)
         self.get_logger().info(f"Number of points: {number_of_points}")
+
+        total_dist = 0.0
+        for i in range(len(path) - 1):
+            dist = np.linalg.norm(np.array(path[i]) - np.array(path[i + 1]))
+            total_dist += dist
+        self.get_logger().info(f"Total path distance: {total_dist:.2f}")
 
 def main(args=None):
     rclpy.init(args=args)
