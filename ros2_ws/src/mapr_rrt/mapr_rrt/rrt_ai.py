@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import copy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
-np.random.seed(41)
+np.random.seed(44)
 #porownac liczbe wierzchołków w grafie i liczba wylosowanych punktów
 # ile udało się przesunąć punktów w kolizji
 class RRT(GridMap):
@@ -265,7 +265,7 @@ class RRT(GridMap):
         (key is the child vertex, and value is its parent vertex).
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
-        self.get_logger().info("============== RRT Search =============")
+        self.get_logger().info("============== RRT_AI Search =============")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
@@ -283,7 +283,7 @@ class RRT(GridMap):
                     break
 
                 occ_prob = self.query_gradient(*random_pt)
-                print(f"Occupancy probability at {random_pt}: {occ_prob:.2f}")
+                # print(f"Occupancy probability at {random_pt}: {occ_prob:.2f}")
 
                 if occ_prob < 0.50:
                     # punkt był dobry od razu
@@ -307,7 +307,7 @@ class RRT(GridMap):
                 step_size = 0.1 + 0.1 * occ_prob
                 random_pt = random_pt - grad * step_size
                 random_pt = np.clip(random_pt, [0, 0], [self.width - 1, self.height - 1])
-                print(f"Gradient w punkcie: {grad}, STEP SIZE: {step_size}")
+                # print(f"Gradient w punkcie: {grad}, STEP SIZE: {step_size}")
                 
                 self.moved_points.append(random_pt)
                 was_moved = True
@@ -342,23 +342,14 @@ class RRT(GridMap):
                 self.get_logger().info("Goal reached!")
                 break
         
-        self.get_logger().info(f"Valid: {len(self.valid_points)} | Not valid: {len(self.not_valid_points)} | Moved: {len(self.moved_points)}")
-
         path = []
         current = tuple(self.end)  # Ensure end is a tuple
-        zliczanie = 0
         while current is not None:
             path.append(current)
             current = self.parent.get(current)
-            # if current.any() in self.moved_points:
-            #     zliczanie += 1
-            # BRUH
         path.reverse()
         self.add_markers(scale = 0.1)
-        print("Path found:", path)
-        self.get_logger().info(f"Path length: {len(path)}")
-        self.get_logger().info(f"Number of points: {number_of_points}")
-        self.get_logger().info(f"Number of moved points: {self.count_moved}")
+        # print("Path found:", path)
         # Verify path connectivity
         for i in range(len(path) - 1):
             if not self.check_if_valid(path[i], path[i + 1]):
@@ -368,8 +359,15 @@ class RRT(GridMap):
         for i in range(len(path) - 1):
             dist = np.linalg.norm(np.array(path[i]) - np.array(path[i+1]))
             total_dist += dist
-        self.get_logger().info(f"Total path distance: {total_dist:.2f}")
         
+        self.get_logger().info("=== RRT_AI Statistics ===")
+        self.get_logger().info(f"Valid: {len(self.valid_points)} | Not valid: {len(self.not_valid_points)} | Moved: {len(self.moved_points)}")
+        self.get_logger().info(f"Number of points: {number_of_points}")
+        self.get_logger().info(f"Number of moved points: {self.count_moved}")   
+        self.get_logger().info(f"Path length(vertices): {len(path)}")     
+        self.get_logger().info(f"Total path distance: {total_dist:.2f}")
+        self.get_logger().info("============================")
+
         # Publish the path
         self.publish_path(path)
 

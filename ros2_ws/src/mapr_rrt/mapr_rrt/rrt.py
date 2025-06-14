@@ -136,6 +136,7 @@ class RRT(GridMap):
         (key is the child vertex, and value is its parent vertex).
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
+        self.get_logger().info("============== Standard RRT Search =============")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
@@ -161,7 +162,7 @@ class RRT(GridMap):
             # Check if we reached the goal
             if self.check_if_valid(new_pt, self.end):
                 self.parent[tuple(self.end)] = tuple(new_pt)  # Ensure end is a tuple
-                print("Goal reached!")
+                self.get_logger().info("Goal reached!")
                 break
         # else:
         #     print("Maximum iterations reached. Goal not found.")
@@ -175,16 +176,19 @@ class RRT(GridMap):
             current = self.parent.get(current)
         path.append(self.start)
         path.reverse()
-
-        # Publish the path
-        self.publish_path(path)
-        self.get_logger().info(f"Number of points: {number_of_points}")
         
         total_dist = 0.0
         for i in range(len(path) - 1):
             dist = np.linalg.norm(np.array(path[i]) - np.array(path[i+1]))
             total_dist += dist
+                # Publish the path
+        self.publish_path(path)
+        self.get_logger().info("=== RRT Search Statistics ===")
+        self.get_logger().info(f"Number of points: {number_of_points}")
+        self.get_logger().info(f"Number of vertices in the graph: {len(path)}")
         self.get_logger().info(f"Total path distance: {total_dist:.2f}")
+        self.get_logger().info("============================")
+
 
 def main(args=None):
     rclpy.init(args=args)
