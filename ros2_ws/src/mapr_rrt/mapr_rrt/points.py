@@ -47,8 +47,8 @@ class PointsPublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
     points_publisher = PointsPublisher()
-    points_publisher.add_point(0.1, 0.1, "start", (0.0, 1.0, 0.0))
-    points_publisher.add_point(2.3, 2.7, "end", (1.0, 0.0, 0.0)) 
+    points_publisher.add_point(1.6, 0.6, "start", (0.0, 1.0, 0.0))
+    points_publisher.add_point(0.3, 1.7, "end", (1.0, 0.0, 0.0)) 
     rclpy.spin(points_publisher)
     points_publisher.destroy_node()
     rclpy.shutdown()

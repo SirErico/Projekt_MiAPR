@@ -3,7 +3,7 @@ import time
 from mapr_rrt.grid_map import GridMap
 import numpy as np
 
-np.random.seed(44)
+np.random.seed(111111)
 
 
 class RRT(GridMap):
@@ -136,7 +136,7 @@ class RRT(GridMap):
         (key is the child vertex, and value is its parent vertex).
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
-        self.get_logger().info("============== Standard RRT Search =============")
+        self.get_logger().info("=== Standard RRT Search ===")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
@@ -164,9 +164,6 @@ class RRT(GridMap):
                 self.parent[tuple(self.end)] = tuple(new_pt)  # Ensure end is a tuple
                 self.get_logger().info("Goal reached!")
                 break
-        # else:
-        #     print("Maximum iterations reached. Goal not found.")
-        #     return  # Exit if the goal is not found within the iteration limit
 
         # Publish the path
         path = []
@@ -187,7 +184,7 @@ class RRT(GridMap):
         self.get_logger().info(f"Number of points: {number_of_points}")
         self.get_logger().info(f"Number of vertices in the graph: {len(path)}")
         self.get_logger().info(f"Total path distance: {total_dist:.2f}")
-        self.get_logger().info("============================")
+        self.get_logger().info("=============================")
 
 
 def main(args=None):

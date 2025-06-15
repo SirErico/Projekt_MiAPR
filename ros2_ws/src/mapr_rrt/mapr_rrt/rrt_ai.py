@@ -11,15 +11,12 @@ import matplotlib.pyplot as plt
 import copy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
-np.random.seed(44)
-#porownac liczbe wierzchołków w grafie i liczba wylosowanych punktów
-# ile udało się przesunąć punktów w kolizji
+
+np.random.seed(111111)
+
 class RRT(GridMap):
     def __init__(self):
         super(RRT, self).__init__()
-        
-        # # Check python path
-        # print("Python executable:", sys.executable)
         
         # Load the trained model
         model_path = self.declare_parameter("model_path", "").get_parameter_value().string_value
@@ -28,6 +25,7 @@ class RRT(GridMap):
             sys.exit(1)
         self.model = tf.keras.models.load_model(model_path)
         print("Model loaded successfully!")
+        
         self.valid_points = []
         self.not_valid_points = []
         self.moved_points = []
@@ -49,7 +47,7 @@ class RRT(GridMap):
         marker.id = 0
         marker.type = Marker.POINTS
         marker.action = Marker.ADD
-        # Ustawienia wyglądu punktów
+        # Marker settings
         marker.scale.x = scale
         marker.scale.y = scale
         marker.color.a = 1.0
@@ -57,7 +55,7 @@ class RRT(GridMap):
         marker.color.g = 1.0
         marker.color.b = 0.0
 
-        # Dodaj punkty
+        # Add points
         for (x, y) in self.valid_points:
             p = Point()
             p.x = x
@@ -75,7 +73,7 @@ class RRT(GridMap):
         marker.id = 1
         marker.type = Marker.POINTS
         marker.action = Marker.ADD
-        # Ustawienia wyglądu punktów
+        # Marker settings
         marker.scale.x = scale
         marker.scale.y = scale
         marker.color.a = 1.0
@@ -83,7 +81,7 @@ class RRT(GridMap):
         marker.color.g = 0.0
         marker.color.b = 0.0
 
-        # Dodaj punkty
+        # Add points
         for (x, y) in self.not_valid_points:
             p = Point()
             p.x = x
@@ -101,7 +99,7 @@ class RRT(GridMap):
         marker.id = 2
         marker.type = Marker.POINTS
         marker.action = Marker.ADD
-        # Ustawienia wyglądu punktów
+        # Marker settings
         marker.scale.x = scale
         marker.scale.y = scale
         marker.color.a = 1.0
@@ -109,7 +107,7 @@ class RRT(GridMap):
         marker.color.g = 0.0
         marker.color.b = 1.0
 
-        # Dodaj punkty
+        # Add points
         for (x, y) in self.moved_points:
             p = Point()
             p.x = x
@@ -265,7 +263,7 @@ class RRT(GridMap):
         (key is the child vertex, and value is its parent vertex).
         Uses self.publish_search() and self.publish_path(path) to publish the search tree and the final path respectively.
         """
-        self.get_logger().info("============== RRT_AI Search =============")
+        self.get_logger().info("=== RRT_AI Search ===")
         self.parent[tuple(self.start)] = None  # Ensure start is a tuple
         number_of_points = 0
         while True:
@@ -286,19 +284,19 @@ class RRT(GridMap):
                 # print(f"Occupancy probability at {random_pt}: {occ_prob:.2f}")
 
                 if occ_prob < 0.50:
-                    # punkt był dobry od razu
+                    # point was good beforehand
                     if self.was_moved:
                         self.count_moved += 1
                     if not was_moved:
                         self.valid_points.append(original_random_pt)
                     break
                 else:
-                    # punkt był zły, przesuwamy go
+                    # point was not good, move it
                     self.was_moved = True
                     if not was_moved:
                         self.not_valid_points.append(original_random_pt)
                        
-                # przesuwanie w kierunku wolnej przestrzeni
+                # move it with a gradient descent step
                 grad = self.gradient_at(*random_pt)
                 grad_norm = np.linalg.norm(grad)
                 if grad_norm > 0:
@@ -313,17 +311,12 @@ class RRT(GridMap):
                 was_moved = True
                 shifts += 1
 
-                # jeśli punkt się praktycznie nie przesunął
+                # if the point has not moved significantly, break the loop
                 if np.linalg.norm(random_pt - original_random_pt) < 0.01:
                     break   
             self.get_logger().info(f"Przesuniecia: {shifts}")
 
-            # if occ_prob >= 0.80:
-            #     #self.not_valid_points.append(original_random_pt)
-            #     continue  # nie przechodzimy dalej
-
-            # tu już wiemy, że random_pt ma occ_prob < 0.8 po przesunięciu
-            # sprawdzamy najbliższy punkt
+            # check closest point in the graph
             closest = self.find_closest(random_pt)
             if closest is None:
                 self.not_valid_points.append(original_random_pt)
@@ -366,7 +359,7 @@ class RRT(GridMap):
         self.get_logger().info(f"Number of moved points: {self.count_moved}")   
         self.get_logger().info(f"Path length(vertices): {len(path)}")     
         self.get_logger().info(f"Total path distance: {total_dist:.2f}")
-        self.get_logger().info("============================")
+        self.get_logger().info("==========================")
 
         # Publish the path
         self.publish_path(path)
@@ -391,12 +384,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-"""
-zrobić raport
-porównanie rrt z rrt_nn
-dla kilku punktów końcowych
-ile wierzchołków, ile w wolnej przestrzeni, ile iteracji, długość ścieżki
-długość ścieżki euklidesowa
-
-"""
