@@ -1,67 +1,75 @@
-# Implementacja planowania ruchu w 2D na mapie zajętości za pomocą algorytmu RRT z próbkowaniem sterowanym gradientem ograniczeń z sieci neuronowej
+# Implementation of 2D Motion Planning on an Occupancy Map using RRT Algorithm with Gradient-Based Sampling Guided by Neural Network
 
-Projekt zaliczeniowy z przedmiotu **Metody i algorytmy planowania ruchu**
+## Repository Overview
+This project implements a Rapidly-exploring Random Tree (RRT) algorithm enhanced with neural network-guided sampling for path planning in 2D environments.
 
----
+### Prerequisites
+1. ROS 2 (tested on Humble) with required ros2 packages
+2. Python 3.10
+3. Required Python packages (requirements.txt):
 
-## 📄 OPIS
-
-- Wybranie gotowej / utworzenie własnej mapy zajętości 2D.
-- Spróbkowanie mapy - utworzenie datasetu (in: współrzędne, out: wolna/zajęta).
-- Wytrenowanie prostej sieci neuronowej (MLP) w PyTorch lub Tensorflow.
-- Przygotowanie metody odpytywania (inferencji) sieci z odczytem gradientu (din/dout) w punkcie.
-- Integracja sieci z planerem RRT:
-  - Wyuczona sieć (teoretycznie może zastąpić mapę przy sprawdzaniu zajętości w punkcie) powinna zwracać zerowy gradient dla miejsc daleko od granic obszarów wolnych/zajętych, natomiast niezerowy gradient w pobliżu przeszkód.
-  - Gradient należy uwzględnić w funkcji próbkującej - wylosowane próbki w obszarze przeszkód można przesunąć wzdłuż gradientu do obszaru wolnego.
-  - Można uwzględnić gradient w algorytmie również na inny sposób wg własnego pomysłu.
-  - W rezultacie należy uzyskać mniejszą liczbę iteracji niż w algorytmie bez gradientu.
-- Wizualizacja planowania ścieżki w Rviz, sprawdzenie czasu planowania, długości i kształtu ścieżek.
-
----
 
 ## 🛠 Steps to Take
 
-### ROS2 Packages
-Install the required ROS2 packages:
+1. Install the required ROS2 packages:
 ```bash
 sudo apt-get install ros-humble-nav2-map-server ros-humble-nav2-lifecycle-manager
 ```
 
-### Create a venv
+2. Create ROS 2 workspace:
 ```bash
+mkdir -p ros2_ws/src
+cd ros2_ws/src
+```
+
+3. Clone the repository:
+```bash
+git clone <repository-url>
+```
+
+4. Before building, create a venv
+```bash
+cd ..
 python3 -m venv venv
 ```
 
-### Source venv
-```bash
-source ~/path/to/venv/bin/activate
-```
-### Source ros2
-```bash
-source /opt/ros/humble/setup.bash
-```
-
-### Installing Python Packages
-Install the Python dependencies from `requirements.txt`:
+5. Install the Python dependencies from `requirements.txt`:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Add 'COLCON_IGNORE' file to your venv folder
+6. Add 'COLCON_IGNORE' file to your venv folder
 ```bash
 touch ~/venv/COLCON_IGNORE
 ```
 
-### Building the ROS2 Workspace
-Navigate to your ROS2 workspace and build the project:
+7. Source venv
 ```bash
-cd ~/ros2_ws
-colcon build 
-source install/setup.bash
+source ~/path/to/venv/bin/activate
+```
+8.  Build and source workspace
+```bash
+colcon build
+source /install/setup.bash
 ```
 
-### Running the RRT Algorithm
-To run the RRT algorithm with the neural net model, use the following command:
+
+
+## Usage
+
+#### Training the Neural Network
+1. Generate training data:
+```bash
+python3 src/sample_map.py
+```
+
+2. Train the neural network:
+```bash
+python3 src/neural_net.py
+```
+
+#### Running the RRT Algorithm
+To run the RRT algorithm with the neural net model:
 ```bash
 ros2 launch mapr_rrt rrt_ai_launch.py model_path:=/your/path/model.keras
 ```
