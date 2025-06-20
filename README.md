@@ -24,7 +24,7 @@ cd ros2_ws/src
 
 3. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/SirErico/Projekt_MiAPR
 ```
 
 4. Before building, create a venv
